@@ -80,6 +80,18 @@ function renderOutput(input: {
   ].join("\n")
 }
 
+function renderMessage(input: { sessionID: SessionID; body: string }) {
+  return [
+    `<task id="${input.sessionID}" state="awaiting_reply">`,
+    `<summary>Subagent sent a message and is awaiting your reply</summary>`,
+    `<message>`,
+    input.body,
+    `</message>`,
+    `Reply with the message tool: message(target:"subagent", task_id:"${input.sessionID}", body:"...").`,
+    "</task>",
+  ].join("\n")
+}
+
 export const TaskTool = Tool.define(
   id,
   Effect.gen(function* () {
@@ -329,14 +341,15 @@ export const TaskTool = Tool.define(
         }),
         () =>
           Effect.gen(function* () {
-            const waited = Effect.raceFirst(
-              background.wait({ id: nextSession.id }).pipe(Effect.map((waited) => waited.info)),
-              background.waitForPromotion(nextSession.id),
-            ).pipe(Effect.map((result) => ({ kind: "done" as const, result })))
-            const timedOut = Effect.sleep(`${timeoutMs} millis`).pipe(Effect.map(() => ({ kind: "timeout" as const })))
-
-            const raced = yield* Effect.raceAll([waited, timedOut])
-            if (raced.kind === "timeout") {
+const outcome = yield* Effect.raceAll([
+              Effect.raceFirst(
+                background.wait({ id: nextSession.id }).pipe(Effect.map((waited) => ({ kind: "settled" as const, info: waited.info }))),
+                background.waitForPromotion(nextSession.id).pipe(Effect.map((info) => ({ kind: "promoted" as const, info }))),
+              ),
+              background.waitForMessage(nextSession.id).pipe(Effect.map((payload) => ({ kind: "message" as const, payload }))),
+              Effect.sleep(`${timeoutMs} millis`).pipe(Effect.map(() => ({ kind: "timeout" as const }))),
+            ])
+            if (outcome.kind === "timeout") {
               yield* Effect.all([cancel, background.cancel(nextSession.id)], { discard: true })
               return yield* Effect.fail(
                 new Error(
@@ -344,8 +357,16 @@ export const TaskTool = Tool.define(
                 ),
               )
             }
-
-            const result = raced.result
+            if (outcome.kind === "message") {
+              yield* notify(nextSession.id)
+              return {
+                title: params.description,
+                metadata,
+                output: renderMessage({ sessionID: nextSession.id, body: outcome.payload.body }),
+              }
+            }
+            if (outcome.kind === "promoted") return backgroundResult()
+            const result = outcome.info
             if (result?.metadata?.background === true) return backgroundResult()
             if (result?.status === "error") return yield* Effect.fail(new Error(result.error ?? "Task failed"))
             if (result?.status === "cancelled") return yield* Effect.fail(new Error("Task cancelled"))
