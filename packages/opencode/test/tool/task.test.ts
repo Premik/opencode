@@ -504,7 +504,7 @@ describe("tool.task", () => {
     }),
   )
 
-  it.instance("prevents subagents from launching subagents by default", () =>
+it.instance("prevents subagents from launching subagents by default", () =>
     Effect.gen(function* () {
       const sessions = yield* Session.Service
       const { chat, assistant } = yield* seed()
@@ -582,6 +582,46 @@ describe("tool.task", () => {
         expect((yield* sessions.get(result.metadata.sessionId)).parentID).toBe(child.id)
       }),
     { config: { subagent_depth: 2 } },
+  )
+
+  it.instance("execute rejects task_id that belongs to a different parent (S1 authz)", () =>
+    Effect.gen(function* () {
+      const sessions = yield* Session.Service
+      const { chat, assistant } = yield* seed()
+      const otherParent = yield* sessions.create({ title: "Other parent" })
+      const foreignChild = yield* sessions.create({ parentID: otherParent.id, title: "Foreign child" })
+
+      const tool = yield* TaskTool
+      const def = yield* tool.init()
+      const promptOps = stubOps()
+
+      const exit = yield* def
+        .execute(
+          {
+            description: "hijack attempt",
+            prompt: "do something",
+            subagent_type: "general",
+            task_id: foreignChild.id,
+          },
+          {
+            sessionID: chat.id,
+            messageID: assistant.id,
+            agent: "build",
+            abort: new AbortController().signal,
+            extra: { promptOps },
+            messages: [],
+            metadata: () => Effect.void,
+            ask: () => Effect.void,
+          },
+        )
+        .pipe(Effect.exit)
+
+      expect(Exit.isFailure(exit)).toBe(true)
+      if (Exit.isFailure(exit)) {
+        const err = exit.cause.toString()
+        expect(err).toContain("is not a child of this session")
+      }
+    }),
   )
 
   it.instance(
