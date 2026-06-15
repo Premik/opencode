@@ -9,6 +9,7 @@ import { MessageV2 } from "../session/message-v2"
 import { Agent } from "../agent/agent"
 import { deriveSubagentSessionPermission } from "../agent/subagent-permissions"
 import type { SessionPrompt } from "../session/prompt"
+import { writeMarker as writeMessageMarker } from "./message"
 import { Config } from "@/config/config"
 import { PositiveInt } from "@opencode-ai/core/schema"
 import { Effect, Exit, Schema, Scope } from "effect"
@@ -378,6 +379,17 @@ const outcome = yield* Effect.raceAll([
             }
             if (outcome.kind === "message") {
               yield* notify(nextSession.id)
+              // Visible "✉ Message from subagent" marker in the PARENT (this) transcript.
+              // The tool's renderMessage output (returned below) is what the MODEL sees as
+              // its tool-call result; the marker is what the HUMAN sees as a distinct row.
+              // Best-effort: a marker write failure must not break the tool's return.
+              yield* writeMessageMarker(sessions, {
+                sessionID: ctx.sessionID,
+                direction: "in",
+                peer: "subagent",
+                body: outcome.payload.body,
+                expectReply: true,
+              }).pipe(Effect.ignore)
               return {
                 title: params.description,
                 metadata,
