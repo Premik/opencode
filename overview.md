@@ -24,7 +24,7 @@ Key architecture points:
 
 ## Root folders
 
-- `packages/` (32 packages, ~180KB total files) — TBD
+- `packages/` (32 packages, ~180KB total files) — REFINED — Monorepo packages: core (V2 session runtime, system context, tools, plugin system), opencode (V1 host: session orchestration, HTTP server, tools), tui (terminal UI on SolidJS), app (web app shell), ui (shared SolidJS components + theming), web (Astro docs + share viewer), cli (daemon + V1 CLI commands), client (generated Promise/Effect API clients), server (V2 HTTP handlers), protocol (HttpApi endpoint definitions), schema (shared Drizzle schemas + event types), sdk (hand-written JS SDK wrappers + OpenAPI codegen), llm (pluggable LLM runtime), console (cloud backend: auth, billing, workspace, Zen proxy), desktop (Electron wrapper).
 - `.opencode/` (38 files) — REFINED — Repo's own opencode configuration: agents, commands, a translation glossary, an Effect-TS skill, TUI themes, and legacy plugin/tool experiments.
   - `opencode.jsonc` — Repo opencode config: schemas, empty provider/permission/MCP blocks, commented-out Effect references and legacy tools.
   - `tui.json` — Minimal TUI config registering a single local plugin (`tui-smoke.tsx`) with keybinds for modal/screen/dialog toggles (currently disabled).
@@ -59,21 +59,21 @@ Key architecture points:
 
 ## packages/
 
-- `core/` (3976KB, 488 files) — TBD
-- `opencode/` (17832KB, 758 files) — TBD
-- `tui/` (1924KB, 241 files) — TBD
-- `app/` (20032KB, 505 files) — TBD
-- `ui/` (11172KB, 1641 files) — TBD
-- `web/` (13764KB, 690 files) — TBD
-- `cli/` (156KB, 25 files) — TBD
-- `client/` (292KB, 21 files) — TBD
-- `server/` (160KB, 31 files) — TBD
-- `protocol/` (148KB, 26 files) — TBD
-- `schema/` (356KB, 74 files) — TBD
-- `sdk/` (1832KB, 48 files) — TBD
-- `llm/` (1720KB, 152 files) — TBD
-- `console/` (36248KB, 533 files) — TBD
-- `desktop/` (9184KB, 250 files) — TBD
+- `core/` (3976KB, 488 files) — REFINED — See `packages/core/src/` below.
+- `opencode/` (17832KB, 758 files) — REFINED — See `packages/opencode/src/` below.
+- `tui/` (1924KB, 241 files) — REFINED — See `packages/tui/src/` below.
+- `app/` — See `packages/app/src/` below.
+- `ui/` — See `packages/ui/src/` below.
+- `web/` — See `packages/web/src/` below.
+- `cli/` (156KB, 25 files) — REFINED — See `packages/cli/src/` below.
+- `client/` (292KB, 21 files) — REFINED — See `packages/client/src/` below.
+- `server/` (160KB, 31 files) — REFINED — See `packages/server/src/` below.
+- `protocol/` (148KB, 26 files) — REFINED — See `packages/protocol/src/` below.
+- `schema/` (356KB, 74 files) — REFINED — See `packages/schema/src/` below.
+- `sdk/` — See `packages/sdk/` below.
+- `llm/` (1720KB, 152 files) — REFINED — See `packages/llm/src/` below.
+- `console/` — See `packages/console/` below.
+- `desktop/` (9184KB, 250 files) — REFINED — See `packages/desktop/` below.
 
 ## packages/core/src/ (REFINED)
 
@@ -262,69 +262,99 @@ V1 implementation of the OpenCode host: session orchestration, HTTP server, buil
 
 TUI package built on SolidJS + `@opentui/solid` rendering a terminal UI for the OpenCode agent. Composes an app shell, keymap/editor/clipboard/audio integrations, reusable dialog/component library, theme system, route components, feature plugins, SolidJS context stores, and utilities. All UI is built on reactive Solid primitives; plugin slots (`home_*`/`sidebar_*`/`app_*`) allow extension. Most dialogs follow the same shape: a `DialogSelect`-based modal with static `.show()` factory returning a `Promise<T>`.
 
-**Top-level entrypoints** (11 files): `app.tsx` (36.9KB — main app shell: `run` Effect bootstraps `@opentui/solid` w/ nested provider hierarchy + mounts `App` orchestrating plugin startup, command palette, `useBindings` keymap wiring, Home/Session routing, SDK event listening, `--continue`/`--fork` args, mouse-selection copy). `parsers-config.ts` (15.7KB — 30+ tree-sitter parser entries mapping filetypes → WASM URLs + highlight/locals SCM queries). `editor-zed.ts` (9.1KB — Zed editor integration via `db.sqlite` selection queries). `attention.ts` (8.6KB — desktop notifications + soundboard w/ 6-sound pack + terminal-focus suppression). `keymap.tsx` (8.6KB — keymap system on `@opentui/keymap`: mode stack, leader-key timing, comma bindings, textarea input layer). `clipboard.ts` (4.6KB — cross-platform clipboard w/ image support via OSC 52 + native). `editor.ts` (3.8KB — `openEditor` spawns `$VISUAL`/`$EDITOR` + WS editor connection discovery). `terminal-win32.ts` (3.4KB — Windows console mode mgmt via `bun:ffi` kernel32). Trivial: `audio.ts` (`Audio` wrapper), `logo.ts` (ASCII art), `runtime.tsx` (`abbreviateHome`), `index.tsx` (barrel).
+**Top-level entrypoints** — Main app shell and integrations. `app.tsx` — main app shell: `run` Effect bootstraps `@opentui/solid` w/ nested provider hierarchy + mounts `App` orchestrating plugin startup, command palette, `useBindings` keymap wiring, Home/Session routing, SDK event listening. `parsers-config.ts` — 30+ tree-sitter parser entries mapping filetypes → WASM URLs + highlight/locals SCM queries. `editor-zed.ts` — Zed editor integration via `db.sqlite` selection queries. `attention.ts` — desktop notifications + soundboard w/ 6-sound pack + terminal-focus suppression. `keymap.tsx` — keymap system on `@opentui/keymap`: mode stack, leader-key timing, comma bindings, textarea input layer. `clipboard.ts` — cross-platform clipboard w/ image support via OSC 52 + native. `editor.ts` — `openEditor` spawns `$VISUAL`/`$EDITOR` + WS editor connection discovery. `terminal-win32.ts` — Windows console mode mgmt via `bun:ffi` kernel32. Trivial: `audio.ts`, `logo.ts`, `runtime.tsx`, `index.tsx` (barrel).
 
-**`component/`** (34 files, 233KB) — Reusable TUI components: stack-based `Dialog`/`DialogSelect` modal system w/ static `.show()` factories, animated backgrounds, command palette, spinners, and full-screen error/loading surfaces. Larger (>10KB): `bg-pulse-render.ts` (14.9KB — animated "GO" logo framebuffer compositor: per-frame RGB ring waves, frame cache), `dialog-provider.tsx` (14.8KB — full provider connection flow w/ OAuth auto/code + API-key auth), `dialog-move-session.tsx` (14.1KB — project-directory `DialogSelect` for moving sessions w/ subdirectory grouping + file-change confirmation), `dialog-session-list.tsx` (12.5KB — session list grouped by recency w/ debounced search, pin/unpin, delete, rename). Mid-size (5-10KB): `dialog-workspace-create.tsx` (warp session-to-workspace flow), `error-component.tsx` (crash recovery UI w/ GitHub bug-report URL builder + Copy/Restart/Quit), `dialog-model.tsx` (searchable model picker w/ Favorites/Recent + `fuzzysort`), `dialog-status.tsx` (read-only MCP/LSP/formatter/plugin status panel), `dialog-retry-action.tsx` (two-button action dialog w/ BgPulse overlay), `dialog-workspace-file-changes.tsx`. Smaller dialogs (≤4KB each, all single-purpose `DialogSelect` modals or helpers): `dialog-console-org`, `dialog-workspace-list`, `dialog-session-delete-failed` (recovery: delete workspace vs warp), `dialog-debug` (info panel + copy), `bg-pulse` (SolidJS wrapper capping 30 FPS), `dialog-stash`, `dialog-mcp` (MCP config editor), `command-palette` (fuzzy-search launcher), `dialog-workspace-unavailable`, `dialog-skill`, `logo`, `startup-loading`, `dialog-theme-list`, `dialog-tag`, `spinner`, `dialog-variant`, `dialog-session-rename`, `todo-item`, `dialog-agent`, `workspace-label`, `plugin-route-missing`, `use-connected`, `register-spinner`.
+**`component/`** — Reusable TUI components: stack-based `Dialog`/`DialogSelect` modal system w/ static `.show()` factories, animated backgrounds, command palette, spinners, and full-screen error/loading surfaces. Larger (>10KB): `bg-pulse-render.ts` — animated "GO" logo framebuffer compositor, `dialog-provider.tsx` — full provider connection flow w/ OAuth auto/code + API-key auth, `dialog-move-session.tsx` — project-directory `DialogSelect` for moving sessions, `dialog-session-list.tsx` — session list grouped by recency w/ debounced search. Mid-size (5-10KB): `dialog-workspace-create.tsx`, `error-component.tsx`, `dialog-model.tsx`, `dialog-status.tsx`, `dialog-retry-action.tsx`, `dialog-workspace-file-changes.tsx`. Smaller dialogs (≤4KB): `dialog-console-org`, `dialog-workspace-list`, `dialog-session-delete-failed`, `dialog-debug`, `bg-pulse`, `dialog-stash`, `dialog-mcp`, `command-palette`, `dialog-workspace-unavailable`, `dialog-skill`, `logo`, `startup-loading`, `dialog-theme-list`, `dialog-tag`, `spinner`, `dialog-variant`, `dialog-session-rename`, `todo-item`, `dialog-agent`, `workspace-label`, `plugin-route-missing`, `use-connected`, `register-spinner`.
 
-**`theme/`** — `index.ts` (27.7KB — flat semantic-token `Theme` type (~45 RGBA tokens) + `ThemeJson` schema (named `defs` refs + hex / `{dark,light}` variant / ANSI code values) + `resolveTheme` w/ cycle detection + runtime registries (defaults < plugins < custom < system) w/ strict priority merge + subscriber pattern. `generateSystem` derives full `ThemeJson` from terminal ANSI colors w/ gray/muted generation; `getSyntaxRules` maps tokens to 60+ TextMate-scope rules; `terminalMode` dark/light detection from bg luminance; `tint`/`selectedForeground` helpers). 33 predefined color theme JSON assets (~150KB total: catppuccin ×3, dracula, gruvbox, nord, tokyonight, solarized, monokai, synthwave84, ...).
+**`theme/`** — Theme system: flat semantic-token `Theme` type (~45 RGBA tokens) + `ThemeJson` schema + `resolveTheme` w/ cycle detection + runtime registries (defaults < plugins < custom < system). `generateSystem` derives full `ThemeJson` from terminal ANSI colors; `getSyntaxRules` maps tokens to 60+ TextMate-scope rules. 33 predefined color theme JSON assets (catppuccin, dracula, gruvbox, nord, tokyonight, solarized, monokai, synthwave84, ...).
 
-**`routes/`** (12 files, 156KB) — Route components: home/landing + session chat view w/ supporting panels. `session/index.tsx` (89.6KB — primary session route: `Session()` orchestrates conversation view, fetches session data on mount, wires keymaps, renders message transcript in a `scrollbox` w/ `stickyScroll="bottom"`, dispatches to `UserMessage`/`AssistantMessage`, interleaves revert banner + permission/question prompts before `Prompt` input bar. Streaming via `streaming={true}` on `<markdown>`/`<code>`; `ReasoningPart` w/ collapsible `ReasoningHeader` + `reasoningSummary`. Tool calls via `ToolPart` + `PART_MAPPING` + `Dynamic` to 14+ tool components (Shell/Write/Edit/Read/Grep/Glob/WebFetch/WebSearch/Task/Execute/ApplyPatch/TodoWrite/Question/Skill/GenericTool) w/ `collapseToolOutput` truncation. Fine-grained reactivity + viewport culling (no explicit virtual scroller)). `session/permission.tsx` (23.7KB — three-stage permission workflow (initial choice → "always allow" confirm → reject w/ feedback); `info()` renders contextual info per type (edit/read/glob/grep/list/bash/task/webfetch/...); `EditBody` split/unified diff). `session/question.tsx` (17.9KB — multi-question forms w/ tab navigation, single/multi-select, custom free-text textarea, "Confirm" review tab). Supporting (≤5KB each): `home.tsx` (Logo + `Prompt` w/ plugin slots), `home/session-destination.tsx`, `session/subagent-footer.tsx` (agent label + token/cost + Parent/Prev/Next nav), `session/dialog-message.tsx` (Revert/Copy/Fork actions), `session/footer.tsx` (status bar: directory, permissions, LSP, MCP), `session/sidebar.tsx` (42-col panel w/ plugin slots), `session/dialog-fork-from-timeline.tsx`, `session/dialog-timeline.tsx`, `session/dialog-subagent.tsx`.
+**`routes/`** — Route components: home/landing + session chat view w/ supporting panels. `session/index.tsx` — primary session route: `Session()` orchestrates conversation view, fetches session data on mount, wires keymaps, renders message transcript in a `scrollbox` w/ `stickyScroll="bottom"`. Streaming via `streaming={true}`; `ReasoningPart` w/ collapsible `ReasoningHeader`. Tool calls via `ToolPart` + `PART_MAPPING` + `Dynamic` to 14+ tool components. `session/permission.tsx` — three-stage permission workflow; `session/question.tsx` — multi-question forms w/ tab navigation. Supporting: `home.tsx`, `home/session-destination.tsx`, `session/subagent-footer.tsx`, `session/dialog-message.tsx`, `session/footer.tsx`, `session/sidebar.tsx`, `session/dialog-fork-from-timeline.tsx`, `session/dialog-timeline.tsx`, `session/dialog-subagent.tsx`.
 
-**`feature-plugins/`** (17 files, 122KB) — Built-in TUI feature plugins registered via `builtins.ts` → `createBuiltinPlugins()` returning `BuiltinTuiPlugin[]` (sidebar panels + home widgets + system: Notifications/PluginManager/WhichKey/DiffViewer). Larger: `system/diff-viewer.tsx` (37.9KB — VCS diff viewer route w/ split/unified view via `@opentui/core` `diff` primitive, file-tree sidebar nav, hunk-to-hunk jumping, diff-source switching via `DialogSelect`), `system/which-key.tsx` (20.2KB — categorized paginated keybinding panel w/ overlay+dock layout modes, visibility via pinned toggle or pending-sequence preview), `home/tips-view.tsx` (16.1KB — ~120-entry rotating tips array covering commands/keybindings/config/agents/MCP/permissions; tips may be static strings or fns receiving `Shortcuts` resolving user keybindings). Mid-size: `system/diff-viewer-file-tree-utils.ts` (8.3KB — pure file-tree builders/flatteners/selection helpers), `system/plugins.tsx` (7.3KB — plugin manager w/ `DialogSelect` list + install flow), `system/diff-viewer-file-tree.tsx` (6.5KB — sidebar file tree w/ branch connectors + status indicators). Smaller (≤4KB each): `system/notifications.ts` (session lifecycle → desktop notifications + context-aware sounds), `system/diff-viewer-ui.tsx` (layout primitives), `sidebar/footer.tsx`, `sidebar/mcp.tsx`, `sidebar/files.tsx`, `sidebar/context.tsx`, `sidebar/lsp.tsx`, `sidebar/todo.tsx`, `home/footer.tsx`, `home/tips.tsx`, `builtins.ts`.
+**`feature-plugins/`** — Built-in TUI feature plugins registered via `builtins.ts` → `createBuiltinPlugins()` returning `BuiltinTuiPlugin[]` (sidebar panels + home widgets + system: Notifications/PluginManager/WhichKey/DiffViewer). Larger: `system/diff-viewer.tsx` — VCS diff viewer route w/ split/unified view, `system/which-key.tsx` — categorized paginated keybinding panel, `home/tips-view.tsx` — ~120-entry rotating tips array. Mid-size: `system/diff-viewer-file-tree-utils.ts`, `system/plugins.tsx`, `system/diff-viewer-file-tree.tsx`. Smaller: `system/notifications.ts`, `system/diff-viewer-ui.tsx`, `sidebar/footer.tsx`, `sidebar/mcp.tsx`, `sidebar/files.tsx`, `sidebar/context.tsx`, `sidebar/lsp.tsx`, `sidebar/todo.tsx`, `home/footer.tsx`, `home/tips.tsx`, `builtins.ts`.
 
-**`ui/`** (11 files, 65KB) — Dialog/toast/spinner/link UI primitives on `@opentui/solid`. `dialog-select.tsx` (25.1KB — generic `DialogSelect<T>` selectable-list dialog w/ `fuzzysort` filtering (title>category), grouped/categorised display, scroll-to-selection, keyboard/mouse nav, imperative `DialogSelectRef`). `spinner.ts` (12.1KB — Knight-Rider/scanner animated spinner engine: `createFrames`/`createColors`/`createKnightRiderTrail`, bidirectional scanning w/ hold-frame fading). `dialog-export-options.tsx` (7.3KB — filename textarea + 4 toggles). `dialog.tsx` (6.0KB — core modal: `Dialog` overlay + stack-based `DialogProvider` store w/ mode-stack push/clear, escape/ctrl+c close, copy-on-select). Smaller (≤4KB each): `dialog-confirm.tsx`, `dialog-prompt.tsx` (single-line text input w/ busy mode), `dialog-help.tsx`, `dialog-alert.tsx`, `toast.tsx` (transient notifications 5s default w/ info/success/warning/error variants), `border.ts`, `link.tsx` (opens `href` via `open` npm).
+**`ui/`** — Dialog/toast/spinner/link UI primitives on `@opentui/solid`. `dialog-select.tsx` — generic `DialogSelect<T>` selectable-list dialog w/ `fuzzysort` filtering, `spinner.ts` — Knight-Rider/scanner animated spinner engine, `dialog-export-options.tsx`, `dialog.tsx` — core modal. Smaller: `dialog-confirm.tsx`, `dialog-prompt.tsx`, `dialog-help.tsx`, `dialog-alert.tsx`, `toast.tsx`, `border.ts`, `link.tsx`.
 
-**`config/`** (2 files, 29KB) — TUI config schema + keybinding registry. `keybind.ts` (23.4KB — central keybinding registry: `Definitions` maps every named keybind → default keys + description; `CommandMap` → dotted command strings; `parse()` validates overrides (rejects unknown); `toBindingConfig`/`bindingDefaults` produce `@opentui/keymap` configs; auto-derived `KeybindOverrides` Schema; `LeaderDefault` (`ctrl+x`)). `index.tsx` (5.2KB — Effect `Schema` for TUI config fields (`Info`: theme, keybinds, plugin, attention, prompt, scroll, mouse, diff_style...); `resolve()` fills defaults + `createBindingLookup`-based keybind view; `TuiConfigProvider`/`useTuiConfig`).
+**`config/`** — TUI config schema + keybinding registry. `keybind.ts` — central keybinding registry: `Definitions` maps every named keybind → default keys + description; `index.tsx` — Effect `Schema` for TUI config fields, `TuiConfigProvider`/`useTuiConfig`.
 
-**`context/`** (22 files, 106KB) — SolidJS context providers/stores for app-wide state, all using `createSimpleContext` pattern from `helper.tsx` (provider skips children until `init.ready`). Larger: `sync.tsx` (23.0KB — v1/v1.5 reactive store mirroring server state: providers/agents/sessions/messages/parts/commands/permissions/questions/todos/MCP/LSP/VCS/console; two-phase `bootstrap()` (loading→partial→complete), `event.subscribe` reconciles deltas, binary-search sorted insertion, 100-message cap, lazy per-session hydration), `data.tsx` (22.1KB — v2 counterpart keyed by `LocationRef` (directory+workspaceID): v2 agents/commands/integrations/models/providers/references/skills + session info/messages/permissions/questions; listens to `V2Event`s, incrementally builds assistant messages w/ step/text/tool/reasoning deltas), `local.tsx` (16.4KB — persisted local UI state: model prefs per-agent, pinned sessions → `session.json`, agent selection, MCP toggle; quick-switch by number-key), `editor.ts` (12.3KB — WebSocket connection to external editor (VS Code/Neovim/...) for selection sync + `@mention`: JSON-RPC 2.0 over MCP, SSE port fallback, exponential-backoff reconnect). Mid-size (5-10KB): `theme.tsx` (theme mgmt: discovers `themes/*.json`, resolves system palette, watches `CliRenderEvents.THEME_MODE`), `sdk.tsx` (creates `@opencode-ai/sdk/v2` client w/ SSE streaming + 16ms render batching + exp-backoff reconnect). Smaller (≤4KB each): `project.tsx` (project identity/paths/workspace awareness), `runtime.tsx` (three immutable contexts: `TuiPaths`/`TuiTerminalEnvironment`/`TuiStartup`), `route.tsx` (simple `Route` union + atomic `navigate()`), `kv.tsx` (KV store → `kv.json` w/ `Flock` locking), `thinking.ts` (reasoning visibility utils: `ThinkingMode` + `reasoningSummary` parsing), `event.ts` (`useEvent()` hook over SDK emitter), `helper.tsx` (`createSimpleContext<T,Props>()` pattern), `path-format.tsx`, `clipboard.tsx`, `permission.tsx` (permission mode `auto`/`normal`), `directory.ts`, `location.tsx`, `prompt.tsx` (mutable `PromptRef`), `epilogue.tsx`, `exit.tsx`, `args.tsx`.
+**`context/`** — SolidJS context providers/stores for app-wide state, all using `createSimpleContext` pattern. Larger: `sync.tsx` — v1/v1.5 reactive store mirroring server state, `data.tsx` — v2 counterpart keyed by `LocationRef`, `local.tsx` — persisted local UI state, `editor.ts` — WebSocket connection to external editor. Mid-size: `theme.tsx`, `sdk.tsx`. Smaller: `project.tsx`, `runtime.tsx`, `route.tsx`, `kv.tsx`, `thinking.ts`, `event.ts`, `helper.tsx`, `path-format.tsx`, `clipboard.tsx`, `permission.tsx`, and others.
 
-**`util/`** (21 files, 28KB) — Small pure/shared TUI helpers. Larger: `error.ts` (6.3KB — `cliErrorMessage` unwraps tagged errors (`CliError`/`ProviderModelNotFoundError`/`ConfigInvalidError`...) → human strings w/ suggestions; `errorFormat`/`errorData` serializers), `transcript.ts` (3.0KB — session transcript → Markdown), `filetype.ts` (2.8KB — ~120-entry ext→highlight lang map), `locale.ts` (2.4KB — `titlecase`/`time`/`datetime`/`number`/`duration`/`truncate`/`pluralize` as `Locale`), `selection.ts` (2.0KB — selected-text extraction + clipboard + key handling). Smaller (≤1.5KB each): `persistence.ts` (read/write text/JSON atomic), `signal.ts` (debounced signal + fade-in), `presentation.ts` (wordmark + epilogue), `system.ts` (`describeOS`/`describeTerminal`), `layout.ts`, `format.ts` (`formatDuration`), `scroll.ts`, `revert-diff.ts`, `model.ts` (`parse`/`get`/`name`), `tool-display.ts`, `provider-origin.ts`, `record.ts`, `path.ts`, `renderer.ts`, `collapse-tool-output.ts`, `session.ts`.
+**`util/`** — Small pure/shared TUI helpers. Larger: `error.ts` — `cliErrorMessage` unwraps tagged errors, `transcript.ts`, `filetype.ts`, `locale.ts`, `selection.ts`. Smaller: `persistence.ts`, `signal.ts`, `presentation.ts`, `system.ts`, `layout.ts`, `format.ts`, `scroll.ts`, `revert-diff.ts`, `model.ts`, `tool-display.ts`, `provider-origin.ts`, `record.ts`, `path.ts`, `renderer.ts`, `collapse-tool-output.ts`, `session.ts`.
 
-**`plugin/`** (5 files, 19KB) — TUI-side plugin runtime shim bridging to core plugin host. `adapters.tsx` (9.4KB — `createTuiApiAdapters(Input)` maps internal services → `Omit<TuiPluginApi,"lifecycle">`: `state`/`ui` (DialogSelect/Alert/Confirm/Prompt/toast)/`route`/`keys`/`mode`/`kv`/`theme`/`event`/`plugins` + deprecated `command` shim). Smaller: `command-shim.ts` (3.2KB — legacy v1 `api.command` bridge → `keymap.registerLayer` w/ deprecation warnings), `runtime.tsx` (2.3KB — `createPluginRuntime` reactive commands/status/slots + `PluginRuntimeProvider`/`usePluginRuntime`), `slots.tsx` (2.1KB — `createSlots()` w/ `SolidSlotRegistry` wiring + `HostSlots`), `api.ts` (1.3KB — `createPluginRoutes` RouteMap + `createTuiApi` lifecycle).
+**`plugin/`** — TUI-side plugin runtime shim bridging to core plugin host. `adapters.tsx` — `createTuiApiAdapters(Input)` maps internal services → `TuiPluginApi`. Smaller: `command-shim.ts`, `runtime.tsx`, `slots.tsx`, `api.ts`.
 
-**`prompt/`** (6 files, 13KB) — Prompt-input composition: history, stash, frecency, display/parts/traits. `history.tsx` (3.4KB — JSONL-backed (`prompt-history.jsonl`) up/down nav, dedup+cap 50), `stash.tsx` (2.9KB — draft LIFO persistence (`prompt-stash.jsonl`), separate from history), `frecency.tsx` (2.8KB — recency-decayed file frecency for autocomplete: `calculateFrecency` = freq / (1 + days), `frecency.jsonl` cap 1000). Smaller: `display.ts` (1.5KB — grapheme-aware (`Intl.Segmenter`) prompt offsets + `@`-mention trigger detection), `part.ts` (1.3KB — `stripPromptPartIDs`/`expandPastedTextPlaceholders`), `traits.ts` (0.7KB — `PromptTraits` for `@opentui` editor trait protocol + `PromptMode` (`normal`/`shell`)).
+**`prompt/`** — Prompt-input composition: history, stash, frecency, display/parts/traits. `history.tsx`, `stash.tsx`, `frecency.tsx`. Smaller: `display.ts`, `part.ts`, `traits.ts`.
 
-## packages/app/src/
+## packages/app/src/ (REFINED)
 
-- `addons/` — TBD
-- `components/` — TBD
-- `pages/` — TBD
-- `context/` — TBD
-- `hooks/` — TBD
-- `i18n/` — TBD
-- `constants/` — TBD
-- `utils/` — TBD
-- `wsl/` — TBD
-- `assets/` — TBD
-- `app.tsx` — TBD
-- `entry.tsx` — TBD
-- `index.ts` — TBD
-- `desktop-menu.ts` — TBD
-- `updater.ts` — TBD
+SolidJS web app shell: route tree, 20+ context providers, reusable dialog/components, i18n (18 locales), and WSL integration. Uses `@tanstack/solid-query`, Sentry, and Tailwind CSS.
 
-## packages/ui/src/
+- `app.tsx` — Main app shell: route tree (`/` home, `/session/:id`, `/new-session`, `/directory/*`), legacy vs new layout, ~20 context providers.
+- `entry.tsx` — Bootstrap: SolidJS render, locale detection, Sentry init.
+- `desktop-menu.ts` — Desktop menu bar type system with platform-specific accelerators.
 
-- `components/` — TBD
-- `v2/` — TBD
-- `context/` — TBD
-- `hooks/` — TBD
-- `i18n/` — TBD
-- `theme/` — TBD
-- `styles/` — TBD
-- `storybook/` — TBD
-- `assets/` — TBD
+**`components/` (~1000KB)** — 80+ reusable UI components: 20+ dialogs (command palette, provider selection, project editing, fork, model management, settings), prompt input with attachments/drag-and-drop, titlebar with tab navigation, file tree with virtual scrolling, settings panels, session components, terminal, debug bar.
 
-## packages/web/src/
+**`pages/` (~800KB)** — Route-level pages: home/project selection, main session page with file tabs/composer/terminal, legacy and new layout shells, session sub-pages (composer, v2 review, timeline with virtual scrolling).
 
-- `components/` — TBD
-- `content/` — TBD
-- `pages/` — TBD
-- `i18n/` — TBD
-- `styles/` — TBD
-- `types/` — TBD
-- `assets/` — TBD
-- `middleware.ts` — TBD
-- `content.config.ts` — TBD
+**`context/` (~640KB)** — SolidJS state management (all use `createSimpleContext`): global/server/tabs/layout/file/prompt/settings/platform contexts, global sync engine (19 files, ~240KB) with event reducer and session cache, plus command/comments/permission/notification/MCP/sync contexts.
+
+**`i18n/` (~380KB)** — 18 locale dictionaries (`en.ts` base + 17 translations) + `parity.test.ts`.
+
+**`utils/` (~148KB)** — 46 utility modules: agent, AI message parsing, base64, diffs, file management, persistence, prompts, server health/scope, session routing, sound, terminal, time, toast, worktree.
+
+**`wsl/` (~71KB)** — Windows Subsystem for Linux integration: types, context provider, server probes, dialogs, settings.
+
+**`addons/` (25KB)** — xterm.js terminal serialization addon for ghostty-web.
+
+**`hooks/`** — `use-providers.ts`, `provider-catalog.ts`.
+
+**`constants/`** — `file-picker.ts`: accepted image/file types for OS dialogs.
+
+**`assets/`** — Static assets: `help/introducing-tabs.mp4`, `help/placeholder.png`.
+
+## packages/ui/src/ (REFINED)
+
+Shared SolidJS UI component library (1641 files): 40+ v1 components + 30+ v2 components, algorithmic theming engine (v1 + v2), i18n (17 locales), markdown rendering with Shiki. Components use `data-component` attribute convention with co-located CSS.
+
+**`components/` (~520KB)** — V1 component library using Kobalte headless primitives: button, dialog, dropdown-menu, context-menu, tabs, select, file-icon, provider-icon, app-icon, icon, diff-changes, toast, tooltip, popover, switch, checkbox, radio-group, avatar, card, progress, spinner, tag, badge, accordion, collapsible, scroll-view, list, keybind, inline-input, text-field, favicon, logo, motion-spring, animated-number, image-preview, dock-surface, sticky-accordion-header.
+
+**`v2/` (~336KB)** — Next-gen component system with redesigned visuals: 30+ `-v2` suffixed components (accordion, avatar, badge, button, checkbox, dialog, diff-changes, divider, field, file-tree, icon-button, inline-input, keybind, line-comment, loader, menu, progress-circle, project-avatar, radio, segmented-control, select, switch, tabs, text-input, textarea, toast, tooltip, wordmark, tab-state-indicator) + v2 design tokens CSS.
+
+**`context/` (~28KB)** — SolidJS context providers: `createSimpleContext<T>()` factory, `DialogProvider`, `I18nProvider` (translation with `{{param}}` interpolation), `MarkedProvider` (markdown with Shiki + KaTeX), `FileComponentProvider`, `WorkerPoolProvider`.
+
+**`hooks/` (~8KB)** — `create-auto-scroll.tsx` (smart auto-scroll with user-pause detection), `use-filtered-list.tsx` (fuzzy-search list with `fuzzysort`).
+
+**`i18n/` (~72KB)** — 17 locale dictionaries: `en.ts` (195+ keys, authoritative) + 16 translations.
+
+**`theme/` (~148KB)** — Algorithmic theming engine: color math (hex↔Oklch, scale generation), token resolution (~200 CSS tokens from seed/palette), `ThemeProvider` (lazy-loads, caches, system/light/dark), 37 bundled themes, v2 theme resolution (WCAG contrast, semantic tokens).
+
+**`styles/` (~40KB)** — Global CSS: master stylesheet with layers, CSS reset, design tokens, gray scales, animations, utilities, Tailwind CSS v4 integration.
+
+**`storybook/` (~8KB)** — Scaffold wrapper + sample fixtures.
+
+**`assets/` (~2MB)** — Static binaries: fonts (Inter, JetBrains Mono), favicons (multiple sizes), icons (app, file-types, provider), images, 90 notification sounds.
+
+## packages/web/src/ (REFINED)
+
+Starlight-based documentation and landing site for OpenCode: marketing landing page, multilingual documentation (17 locales), and real-time session share viewer. Built with Astro + SolidJS.
+
+- `middleware.ts` — Astro middleware for locale routing: detects `/docs/en/` style URLs, rewrites to proper locale paths, parses `Accept-Language` with `matchLocale()`.
+
+**`assets/` (~800KB)** — Static media: brand logos (dark/light/ornate SVG), lander icons/screenshots, web screenshots.
+
+**`components/` (~400KB)** — Astro + SolidJS UI components: `Lander.astro` (marketing landing page with install commands, feature list, screenshot gallery), `Share.tsx` (real-time session replay over WebSocket with auto-reconnect), `Hero.astro`, `Header.astro`, `Footer.astro`, `Head.astro`, `SiteTitle.astro`, `LanguageSelect.astro`, 100+ Heroicons-style SVG icons, `share/` subcomponents (part renderer, content views for bash/code/diff/error/markdown/text, copy button).
+
+**`content/` (500+ files, ~5MB)** — Astro content collections: `docs/` (30+ MDX documentation pages in 18 locales), `i18n/` (18 locale JSON files for UI strings).
+
+**`content.config.ts`** — Astro content config: `docs` and `i18n` collections with type-safe schemas.
+
+**`i18n/`** — `locales.ts`: locale arrays, alias mapping, `matchLocale()` parser.
+
+**`pages/`** — Astro routes: `s/[id].astro` (session share page with Open Graph meta), `[...slug].md.ts` (API route returning raw Markdown).
+
+**`styles/`** — `custom.css`: custom color palette, Starlight overrides, responsive breakpoints.
+
+**`types/`** — Ambient type declarations for `lang-map` and Starlight virtual modules.
 
 ## packages/cli/src/ (REFINED)
 
@@ -358,94 +388,100 @@ TUI package built on SolidJS + `@opentui/solid` rendering a terminal UI for the 
 
 - `api.ts` — Composes the entire `HttpApi` surface by importing all endpoint groups, applying location-scoped and session-scoped middleware, and annotating with OpenAPI metadata. Exports `makeApi` (accepts custom event definitions) and `makeDefaultApi` (built-in `EventGroup`), both parameterized by location and session-location middleware context keys.
 - `errors.ts` — All HTTP error types via `Schema.TaggedErrorClass` with status codes: `InvalidRequestError` (400), `UnauthorizedError` (401), `ForbiddenError` (403), `ConflictError` (409), `ServiceUnavailableError` (503), `UnknownError` (500), plus domain errors (`ProviderNotFoundError`, `SessionNotFoundError`, `MessageNotFoundError`, `InvalidCursorError`, `PermissionNotFoundError`, `QuestionNotFoundError`, `PtyNotFoundError`).
-- `groups/` (18 files) — `HttpApiGroup` definitions per domain, all location-scoped via `LocationQuery`. Major groups: `session.ts` (14.9KB — 17 endpoints for full session lifecycle: list/create/get, switch agent/model, prompt, compact, wait, revert stage/clear/commit, context, history, SSE events, interrupt, messages; branded `SessionsCursor` with base64url); `permission.ts` (5.8KB — pending/saved permission listing + session-scoped create/list/fetch/reply, factory `makePermissionGroup`); `pty.ts` (5.1KB — PTY CRUD + connect tokens, `hasPtyConnectTicketURL` for ticket-auth WebSocket bypass); `integration.ts` (4.8KB — integration list/fetch, key-based/OAuth connections, OAuth attempt lifecycle); `question.ts` (3.6KB — pending requests + session-scoped list/reply/reject, factory `makeQuestionGroup`); `fs.ts` (2.3KB — `fs.read`/`fs.list`/`fs.find` with custom `ListQuery`/`FindQuery`); `event.ts` (2.3KB — SSE subscription `/api/event` with dynamic event schema + `server.connected` fallback, exports `EventGroup`/`OpenCodeEvent`); `message.ts` (2.2KB — paginated `session.messages` with cursor navigation); `project-copy.ts` (2.2KB — experimental create/remove/refresh copy ops, `ProjectCopyError` with `forceRequired`); `provider.ts` (1.7KB — list/fetch providers, `ServiceUnavailableError`); `location.ts` (1.3KB — defines `LocationQuery` schema + `location.get`); `credential.ts` (1.3KB — update label / remove credential).
-  - Single-endpoint `*.list` groups — `command.ts`, `model.ts`, `reference.ts`, `skill.ts`, `agent.ts` each define a single location-scoped `X.list` endpoint retrieving registered X (commands, models ordered by release date, references, skills, agents); `health.ts` defines `health.get` (`/api/health` → `{ healthy: true }`).
-- `middleware/` (2 files) — `authorization.ts` (`Authorization` `HttpApiMiddleware.Service` → `UnauthorizedError` on failure, applied globally); `schema-error.ts` (`SchemaErrorMiddleware` → `InvalidRequestError` (400) on validation failure, applied globally).
+- `groups/` — `HttpApiGroup` definitions per domain, all location-scoped via `LocationQuery`. **Major groups:** `session.ts` — 17 endpoints for full session lifecycle (list/create/get, switch agent/model, prompt, compact, wait, revert, context, history, SSE events, interrupt, messages); `permission.ts` — pending/saved permission listing + session-scoped operations, factory `makePermissionGroup`; `pty.ts` — PTY CRUD + connect tokens; `integration.ts` — integration list/fetch, connection flows, OAuth attempt lifecycle; `question.ts` — pending requests + session-scoped operations, factory `makeQuestionGroup`; `fs.ts` — `fs.read`/`fs.list`/`fs.find`; `event.ts` — SSE subscription `/api/event`, exports `EventGroup`/`OpenCodeEvent`; `message.ts` — paginated `session.messages`; `project-copy.ts` — experimental copy ops; `provider.ts` — list/fetch providers; `location.ts` — defines `LocationQuery` schema; `credential.ts` — update label / remove credential. **Single-endpoint groups:** `command.ts`, `model.ts`, `reference.ts`, `skill.ts`, `agent.ts` each define a single `X.list` endpoint; `health.ts` defines `health.get` (`/api/health` → `{ healthy: true }`).
+- `middleware/` — `authorization.ts` (`Authorization` middleware → `UnauthorizedError`), `schema-error.ts` (`SchemaErrorMiddleware` → `InvalidRequestError` (400)). Both applied globally.
 
+## packages/schema/src/ (REFINED)
 ## packages/schema/src/ (REFINED)
 
 Core session/message schemas:
 - `session.ts` — `Session.Info` struct (V2 metadata: id, projectID, agent, model, cost/token tracking, timestamps, location, revert state) + `Session.ListAnchor` pagination; re-exports `SessionID`/`SessionEvent`.
-- `prompt.ts` / `prompt-input.ts` — Prompt schemas: `Prompt` struct (text + optional file/agent attachments) with `Source`/`FileAttachment`/`AgentAttachment` + equivalence/construction helpers; `prompt-input` is the lighter inbound variant (no MIME).
+- `prompt.ts` / `prompt-input.ts` — Prompt schemas: `Prompt` struct (text + optional file/agent attachments) with `Source`/`FileAttachment`/`AgentAttachment`; `prompt-input` is the lighter inbound variant (no MIME).
 - `session-input.ts` — `SessionInput.Admitted` record created at durable admit time (sequence, message ID, prompt, delivery mode, timestamps, optional promotion sequence).
 - `session-message.ts` — Central V2 message schema: tagged union (`User`/`Synthetic`/`System`/`Shell`/`Assistant` with text/reasoning/tool-call blocks, `AgentSwitched`/`ModelSwitched`/`Compaction`); `ToolState` enum; branded `ID` (`msg_` prefix).
-- `session-event.ts` — Largest event file: all V2 session event types via `Event.define` — durable (prompted, admitted, step/text/reasoning/tool lifecycle, compaction, retry, revert) + live-only deltas (text/reasoning/tool.input/compaction `.delta`). Exports `Durable` (replay-safe) and `All` sets.
-- `session-todo.ts` / `session-status-event.ts` / `session-compaction-event.ts` / `session-delivery.ts` — Minor session schemas: todo info+`todo.updated`, `SessionStatus` (idle/retry/busy)+`session.status`/deprecated `session.idle`, `session.compacted` notification, `Delivery` union (`steer`|`queue`).
+- `session-event.ts` — All V2 session event types via `Event.define` — durable (prompted, admitted, step/text/reasoning/tool lifecycle, compaction, retry, revert) + live-only deltas. Exports `Durable` (replay-safe) and `All` sets.
+- `session-todo.ts` / `session-status-event.ts` / `session-compaction-event.ts` / `session-delivery.ts` — Minor session schemas: todo, status, compaction notification, delivery union.
 
 Event infrastructure:
-- `event.ts` — Foundational `Event.define` (schema structs w/ metadata wrappers), `Event.inventory`, `Event.latest` (dedupe by type/prefer higher versions), `Event.durable` filter; branded `Event.ID` (`evt_` prefix).
-- `event-manifest.ts` — Central registry aggregating all event definitions (session/filesystem/permission/plugin/pty/question/TUI/MCP/LSP/VCS/workspace/worktree/installation/server), organized into `ServerDefinitions` (foundation+features) layers; computes `Latest` map for version-aware dispatch.
+- `event.ts` — Foundational `Event.define` (schema structs w/ metadata wrappers), `Event.inventory`, `Event.latest`, `Event.durable` filter; branded `Event.ID` (`evt_` prefix).
+- `event-manifest.ts` — Central registry aggregating all event definitions, organized into `ServerDefinitions` (foundation+features) layers; computes `Latest` map for version-aware dispatch.
 - `durable-event-manifest.ts` — Extracts durable replay-safe definitions: `SessionDurable` (V2) and `Durable` (V1+V2 union).
 
 Provider/model/agent/permission config schemas:
-- `model.ts` — Model config: `Model.Ref`/`Capabilities`/`Cost` (tiered cache pricing)/`Api`/full `Model.Info` (name, family, variants, limits, status, enabled).
-- `provider.ts` — Provider config: branded `Provider.ID` (named constants), `Provider.Api`/`Request`/`Info` (id, integration link, name, disabled).
+- `model.ts` — Model config: `Model.Ref`/`Capabilities`/`Cost`/`Api`/full `Model.Info`.
+- `provider.ts` — Provider config: branded `Provider.ID`, `Provider.Api`/`Request`/`Info`.
 - `agent.ts` — Agent schema: branded `Agent.ID`, `Agent.Color` union, `Agent.Info` (model ref, request config, system prompt, mode, visibility, color, step limit, permission ruleset).
-- `permission.ts` / `permission-saved.ts` — V2 permission contract: `Permission.Request`/`Reply`/`Rule` (action/resource/effect)/`Ruleset` + `permission.v2.asked`/`replied` events; `permission-saved` is the persisted-grants record (id, projectID, action, resource).
-- `command.ts` — `Command.Info`: user-saved command template (name, template, optional description/agent/model ref, subtask flag).
+- `permission.ts` / `permission-saved.ts` — V2 permission contract: `Permission.Request`/`Reply`/`Rule`/`Ruleset` + events; `permission-saved` is the persisted-grants record.
+- `command.ts` — `Command.Info`: user-saved command template.
 - `credential.ts` — Credential value model: `Credential.OAuth`/`Credential.Key` tagged union, branded `ID` (`cred_` prefix).
 - `llm.ts` — Reusable LLM schemas: `ProviderMetadata`, `ToolTextContent`/`ToolFileContent`/`ToolContent` union.
 
 Project/workspace/integration/other domain schemas:
-- `project.ts` / `project-copy.ts` — `Project.Info` (worktree, VCS, name, icon, commands, sandboxes) + `project.updated`; project-copy input/output schemas (`CreateInput`/`RemoveInput`/`Copy`, branded `StrategyID`).
-- `integration.ts` — Largest integration schema: auth methods (OAuth/Key/Env), interactive prompts (Text/Select w/ conditional `When`), OAuth attempt lifecycle (pending/complete/failed/expired), `Integration.Ref`/`Info`, events.
-- `reference.ts` / `skill.ts` / `question.ts` — Reference sources (Local/Git union), skill sources (Directory/Url/Embedded), V2 question contract (`Option`/`Info`/`Prompt`/`Request`/`Reply` + asked/replied/rejected events).
-- `pty.ts` / `pty-ticket.ts` — PTY schema (`Pty.Info`, lifecycle events, create/update inputs) + `PtyTicket.ConnectToken` for WebSocket auth.
-- `revert.ts` / `file-diff.ts` — Revert snapshot model (`Revert.FileDiff`/`State`) + `FileDiff.Info` (path, patch, add/delete counts, status).
+- `project.ts` / `project-copy.ts` — `Project.Info` + `project.updated`; project-copy input/output schemas.
+- `integration.ts` — Integration schema: auth methods (OAuth/Key/Env), interactive prompts, OAuth attempt lifecycle, `Integration.Ref`/`Info`, events.
+- `reference.ts` / `skill.ts` / `question.ts` — Reference sources, skill sources, V2 question contract.
+- `pty.ts` / `pty-ticket.ts` — PTY schema + `PtyTicket.ConnectToken` for WebSocket auth.
+- `revert.ts` / `file-diff.ts` — Revert snapshot model + `FileDiff.Info`.
 - `filesystem.ts` — `file.edited` event, `FileSystem.Entry`/`Submatch`/`Match`/`FindInput`.
-- `location.ts` — `Location.Ref` (directory + optional workspaceID) + `Location.Info` (adds project ref), `Location.response` helper.
+- `location.ts` — `Location.Ref` (directory + optional workspaceID) + `Location.Info`, `Location.response` helper.
 - `connection.ts` — Integration connection info: `Connection.CredentialInfo`/`EnvInfo` tagged union.
 
 Standalone branded ID types (kept separate to prevent cycles):
-- `session-id.ts` / `project-id.ts` / `workspace-id.ts` / `integration-id.ts` — Branded string types: `SessionID` (`ses`), `ProjectID` (`global` sentinel), `WorkspaceID` (`wrk`), `IntegrationID`+`IntegrationMethodID`; each with time-sorted factory methods (`ascending`/`descending`), 38-char identifiers (hex timestamp + random + monotonic counter).
-- `identifier.ts` — Shared time-sorted ID generation utility used by the branded types.
-- `schema.ts` — Foundational utilities: base types (`PositiveInt`/`NonNegativeInt`/`RelativePath`/`AbsolutePath`), custom `optional` combinator, `statics` helper, `DateTimeUtcFromMillis`.
-- `index.ts` — Package barrel re-exporting all modules as named namespaces (`Session`, `SessionMessage`, `Model`, `Provider`, `Agent`, `Question`, etc.) + raw `Prompt` types and `schema` utilities.
+- `session-id.ts` / `project-id.ts` / `workspace-id.ts` / `integration-id.ts` — Branded string types with time-sorted factory methods, 38-char identifiers.
+- `identifier.ts` — Shared time-sorted ID generation utility.
+- `schema.ts` — Foundational utilities: base types, custom `optional` combinator, `statics` helper, `DateTimeUtcFromMillis`.
+- `index.ts` — Package barrel re-exporting all modules as named namespaces + raw `Prompt` types and `schema` utilities.
 
-Minor event stubs (compact): `workspace.ts` (thin re-export), `workspace-event.ts` (ready/failed/status), `filesystem-watcher.ts` (`file.watcher.updated`), `project-directories.ts` (`project.directories.updated`), `tui-event.ts` (`tui.prompt.append`/`command.execute`/`toast.show`/`session.select`), `mcp-event.ts` (`mcp.tools.changed`/`mcp.browser.open.failed`), `ide-event.ts` (`ide.installed`), `lsp-event.ts` (`lsp.updated`), `server-event.ts` (`server.connected`/`global.disposed`), `installation-event.ts` (`.updated`/`.update-available`), `vcs-event.ts` (`vcs.branch.updated`), `worktree-event.ts` (`worktree.ready`/`.failed`), `catalog.ts` (`catalog.updated`), `plugin.ts` (`plugin.added`), `models-dev.ts` (`models-dev.refreshed`). Each is a small single-event or thin-reexport file.
+Minor event stubs: `workspace.ts`, `workspace-event.ts`, `filesystem-watcher.ts`, `project-directories.ts`, `tui-event.ts`, `mcp-event.ts`, `ide-event.ts`, `lsp-event.ts`, `server-event.ts`, `installation-event.ts`, `vcs-event.ts`, `worktree-event.ts`, `catalog.ts`, `plugin.ts`, `models-dev.ts`. Each is a small single-event or thin-reexport file.
 
-V1 compat stubs (dropped from detail): `legacy-event.ts`, `permission-v1.ts`, `question-v1.ts`, `session-v1.ts` (all ~0.03KB V1 compat stubs, skip).
-- `v1/` (4 files) — Legacy V1 schemas for backward compat: `session.ts` (19.7KB — complete V1 message/event model: `User`/`Assistant` with `Part` unions (Text/Tool/File/Reasoning/Snapshot/Patch/Compaction/Subtask/StepStart/StepFinish/Retry), error types (API/Auth/Aborted/OutputLength), `SessionInfo`, events; uses `Types.DeepMutable`); `question.ts` (2.8KB — V1 question mirroring V2 with V1 IDs); `permission.ts` (2.6KB — V1 permission: patterns vs V2 resources, `Action` vs `Effect` literal); `legacy-event.ts` (0.5KB — `command.executed` w/ `SessionV1.MessageID`).
+V1 compat: `v1/` — Legacy V1 schemas for backward compat: `session.ts` (complete V1 message/event model), `question.ts`, `permission.ts`, `legacy-event.ts`.
 
 ## packages/llm/src/ (REFINED)
 
-Pluggable LLM runtime: typed request/response schemas, per-provider configuration facades, per-protocol streaming implementations, and request routing with auth/transport. Every protocol implements the common `Protocol` interface (`id`/`body.schema`/`from`/`stream.event`/`initial`/`step`/`terminal`/`onHalt`) translating provider-specific formats into the common `LLMEvent` stream; shared infrastructure (`shared.ts`, `utils/lifecycle.ts`, `utils/tool-stream.ts`) supplies a common text/reasoning state machine and streaming tool-call accumulator, so protocols mainly differ in body construction, event-shape parsing, and usage/cache mapping.
+Pluggable LLM runtime: typed request/response schemas, per-provider configuration facades, per-protocol streaming implementations, and request routing with auth/transport. Every protocol implements the common `Protocol` interface translating provider-specific formats into the common `LLMEvent` stream; shared infrastructure supplies a common text/reasoning state machine and streaming tool-call accumulator.
 
 **Top-level modules:**
-- `llm.ts` (6.0KB) — `LLM` namespace: `request()`/`updateRequest()`/`generateObject()` helpers building `LLMRequest` from user-friendly inputs + re-exports of `LLMClient.generate`/`stream`; `generateObject` forces a synthetic tool call to decode structured output.
-- `tool.ts` (9.4KB) / `tool-runtime.ts` (2.9KB) — Core typed tool abstraction: `Tool.make()` (Effect schemas or raw JSON Schema), `toDefinitions()` → `ToolDefinition[]`, memoized codecs; `ToolRuntime.dispatch()` executes one canonical call (decode → `execute` → encode → `DispatchResult` w/ `LLMEvent`s).
-- `cache-policy.ts` (5.5KB) — `applyCachePolicy()` injects `CacheHint`s onto request parts based on `CachePolicy`, default `"auto"` optimizing for Anthropic/Bedrock tool-use loops.
-- `provider.ts` (1.2KB) + `provider-error.ts` (1.3KB) — `Provider.make()` structural helper for defining providers outside built-in facades; context-overflow detection (`isContextOverflow` regex + `LLMError` classification + `ProviderErrorEvent` schema).
-- `index.ts` (barrel — dropped) re-exports public API.
+- `llm.ts` — `LLM` namespace: `request()`/`updateRequest()`/`generateObject()` helpers building `LLMRequest` from user-friendly inputs.
+- `tool.ts` / `tool-runtime.ts` — Core typed tool abstraction: `Tool.make()` (Effect schemas or raw JSON Schema), `ToolRuntime.dispatch()` executes one canonical call.
+- `cache-policy.ts` — `applyCachePolicy()` injects `CacheHint`s onto request parts based on `CachePolicy`.
+- `provider.ts` + `provider-error.ts` — `Provider.make()` structural helper for defining providers; context-overflow detection.
 
-**`providers/` (13 files, 27.7KB)** — Per-provider configuration facades mapping provider-specific APIs to the common protocol interface. Each exposes a `configure().model(id)` factory (protocol + auth + endpoint). Built-in: `anthropic` (`x-api-key`), `amazon-bedrock` (SigV4/bearer), `google` (`x-goog-api-key`), `azure` (resourceName/baseURL), `openai` (Responses/WS/Chat), `openrouter` (extends OpenAIChat w/ usage/reasoning/promptCacheKey), `xai`, `github-copilot` (auto-selects Responses for GPT-5+), `cloudflare` (AI Gateway dual-auth + Workers AI), `openai-compatible.ts` (generic + family helpers: baseten/cerebras/deepinfra/deepseek/fireworks/groq/togetherai), `openai-compatible-profile.ts`, `openai-options.ts` (`store:false` + GPT-5 reasoning defaults).
+**`providers/`** — Per-provider configuration facades mapping provider-specific APIs to the common protocol interface. Each exposes a `configure().model(id)` factory (protocol + auth + endpoint). Built-in: `anthropic`, `amazon-bedrock`, `google`, `azure`, `openai` (Responses/WS/Chat), `openrouter`, `xai`, `github-copilot`, `cloudflare`, `openai-compatible.ts` (generic + family helpers), `openai-compatible-profile.ts`, `openai-options.ts`.
 
-**`protocols/` (9 files + utils/9, 181KB)** — Per-protocol streaming implementations (each: SSE/binary framing, message projection, tool-call streaming, usage/cache mapping):
-- `anthropic-messages.ts` (33.6KB) — Anthropic Messages (SSE, `2023-06-01`): system as cache-control text blocks (4-breakpoint ephemeral budget: tools→system→messages), full extended thinking (thinking+signature deltas), server-executed tools (`web_search`/`code_execution`/`web_fetch`) → `tool-call`+`tool-result` w/ `providerExecuted:true`; native chronological system updates only for `claude-opus-4-8`, others use `<system-update>` fallback.
-- `openai-responses.ts` (39.9KB) — OpenAI Responses (`POST /responses`) w/ HTTP SSE **and** WebSocket transports (WS strips `stream:true`, adds `type:"response.create"`). 18+ SSE event types; reasoning via `response.reasoning_summary_text.delta` (keyed `item_id:summary_index`); `output_item.done` emits `tool-call`+`tool-result` for 8 hosted tool types (`web_search`/`file_search`/`code_interpreter`/`computer_use`/`image_generation`/`mcp_call`/`local_shell`/`web_search_preview`); terminal `completed`/`incomplete`/`failed` (latter → provider-error w/ context-overflow); supports `encrypted_content` + multi-part summaries.
-- `bedrock-converse.ts` (24.2KB) — AWS Bedrock Converse (binary AWS event-stream framing via `bedrock-event-stream.ts`); `ParserState` tracks ToolStream / split stop+usage across `messageStop`+`metadata` / per-index reasoning signatures; stop reasons mapped (`end_turn`/`tool_use`/`max_tokens`/`content_filtered`); SigV4 auth.
-- `openai-chat.ts` (19.6KB) — OpenAI Chat Completions (`/chat/completions`), reused by DeepSeek/TogetherAI/Cerebras/etc.; `reasoning_content`→reasoningDelta, ToolStream keyed by index; usage w/ `cached_tokens`/`reasoning_tokens`.
-- `gemini.ts` (18.4KB) — Google Gemini (`:streamGenerateContent?alt=sse`); delivers full `functionCall` args in one chunk (no tool-input deltas); tool schemas via `GeminiToolSchema.convert`; `Auth.none` (API key in query via facade).
-- `shared.ts` (14.3KB) — Central toolkit reused by every protocol: JSON codecs, token accounting, media validation (28MB encoded/20MB decoded), SSE framing, `jsonPost`, `matchToolChoice`, `wrappedSystemUpdate`/`systemUpdateText` (lowers privileged system→XML-escaped `<system-update>` for routes lacking native support), `parseToolInput`.
-- `bedrock-event-stream.ts` (3.8KB) — Binary AWS event-stream decoding via `@smithy/eventstream-codec` w/ cursor-tracking `FrameBufferState` compacting consumed bytes.
-- `openai-compatible-chat.ts` (0.9KB) — Minimal 17-line route reusing `OpenAIChat.protocol` verbatim w/ distinct id.
-- `utils/` (9 files, 30.1KB) — `lifecycle.ts` (common text/reasoning state machine — idempotent `textDelta`/`reasoningStart`/`reasoningEnd`, one `StepStart` per response), `tool-stream.ts` (generic streaming tool-call accumulator: `appendOrStart`/`appendExisting`/`finish`/`finishAll`), `cache.ts`+`bedrock-cache.ts` (4-cap breakpoint counter + TTL buckets shared by Anthropic+Bedrock), `bedrock-auth.ts` (SigV4 via `aws4fetch`), `bedrock-media.ts`, `gemini-tool-schema.ts`, `openai-options.ts`, `tool-schema.ts`.
+**`protocols/`** — Per-protocol streaming implementations (SSE/binary framing, message projection, tool-call streaming, usage/cache mapping):
+- `anthropic-messages.ts` — Anthropic Messages: system as cache-control text blocks, full extended thinking, server-executed tools.
+- `openai-responses.ts` — OpenAI Responses w/ HTTP SSE and WebSocket transports, 18+ SSE event types, 8 hosted tool types.
+- `bedrock-converse.ts` — AWS Bedrock Converse (binary AWS event-stream framing), SigV4 auth.
+- `openai-chat.ts` — OpenAI Chat Completions, reused by DeepSeek/TogetherAI/Cerebras/etc.
+- `gemini.ts` — Google Gemini (`:streamGenerateContent?alt=sse`), tool schemas via `GeminiToolSchema.convert`.
+- `shared.ts` — Central toolkit reused by every protocol: JSON codecs, token accounting, media validation, SSE framing.
+- `bedrock-event-stream.ts` — Binary AWS event-stream decoding.
+- `openai-compatible-chat.ts` — Minimal route reusing `OpenAIChat.protocol`.
+- `utils/` — `lifecycle.ts` (common text/reasoning state machine), `tool-stream.ts` (streaming tool-call accumulator), `cache.ts`+`bedrock-cache.ts`, `bedrock-auth.ts`, `bedrock-media.ts`, `gemini-tool-schema.ts`, `openai-options.ts`, `tool-schema.ts`.
 
-**`route/` (8 files, 45.9KB)** — Request routing: `client.ts` (16.5KB — central `Route` type + `LLMClient` service: `Route.make()` composes protocol+endpoint+auth+framing; compile→prepare→stream→generate pipeline, decodes frames through protocol state machine, emits `LLMEvent`s / collects `LLMResponse`); `executor.ts` (13.6KB — sends requests, HTTP status→typed `LLMError`, redacts sensitive fields, rate-limit headers, jittered exp backoff max 2 retries); `auth.ts` (5.8KB — `Credential` lazy resolution + composable `Auth`: bearer/apiKey/header/none/passthrough/custom); `protocol.ts` (4.0KB — `Protocol` interface + `Protocol.make()`); `endpoint.ts`/`auth-options.ts`/`framing.ts` (`Framing.sse`)/`index.ts` (small helpers + barrel).
-  - `transport/` (3 files, 14.9KB) — `http.ts` (`HttpTransport.httpJson` w/ protocol-owned-field denylist, frames via `Framing`); `websocket.ts` (8.9KB — `WebSocketExecutor`/`WebSocketTransport.json` reusing HTTP prep, streams text/binary); `index.ts` (`Transport` interface + `TransportRuntime`).
+**`route/`** — Request routing: `client.ts` (central `Route` type + `LLMClient` service), `executor.ts` (sends requests, HTTP status→typed `LLMError`), `auth.ts` (`Credential` lazy resolution + composable `Auth`), `protocol.ts` (`Protocol` interface), `endpoint.ts`/`auth-options.ts`/`framing.ts`/`index.ts`. `transport/` — `http.ts` (`HttpTransport.httpJson`), `websocket.ts` (`WebSocketExecutor`), `index.ts`.
 
-**`schema/` (6 files, 54.4KB)** — Common LLM Effect schemas: `events.ts` (23.7KB — `Usage` token accounting, 15 tagged `LLMEvent` types, `LLMEvent` constructors/`is.*` guards, `LLMResponse` w/ `ResponseState` fold/reduce/complete); `messages.ts` (11.7KB — content parts `SystemPart`/`TextPart`/`MediaPart`/`ToolCallPart`/`ToolResultPart`/`ReasoningPart`/`ContentPart`, `Message` class, `ToolDefinition`/`ToolChoice`/`ResponseFormat`, central `LLMRequest`); `options.ts` (10.7KB — `ProviderOptions`/`HttpOptions`/`GenerationOptions`/`ModelLimits`/`Model` class + `CacheHint`/`CachePolicy`); `errors.ts` (6.4KB — tagged error-reason classes w/ `retryable` + composite `LLMError` + `ToolFailure`); `ids.ts` (1.8KB — branded `ModelID`/`ProviderID`, unions `ReasoningEffort`/`TextVerbosity`/`MessageRole`/`FinishReason`).
+**`schema/`** — Common LLM Effect schemas: `events.ts` (`Usage` token accounting, 15 tagged `LLMEvent` types, `LLMResponse`), `messages.ts` (content parts, `Message` class, `ToolDefinition`/`ToolChoice`, central `LLMRequest`), `options.ts` (`ProviderOptions`/`HttpOptions`/`GenerationOptions`/`Model` class + `CacheHint`/`CachePolicy`), `errors.ts` (tagged error-reason classes + composite `LLMError`), `ids.ts` (branded `ModelID`/`ProviderID`, unions).
 
-## packages/sdk/
+## packages/sdk/ (REFINED)
 
-- `js/src/` — SUM_DONE — Hand-written wrappers around generated SDK. `index.ts` (barrel re-exporting client+server + `createOpencode()` convenience that starts a server and returns connected client + handle), `server.ts` (4kb — spawns `opencode serve` child process, parses "listening on" log → URL, returns `{url, close}`; `createOpencodeTui()` launches TUI w/ inherited stdio), `process.ts` (1kb — `stop()` kills child via `taskkill` on Windows + `bindAbort()` wires AbortSignal), `v2/index.ts` (V2 barrel w/ same `createOpencode()` pattern), `v2/server.ts` (4kb — identical to `server.ts` but V2 types), `v2/client.ts` (3kb — constructs `OpencodeClient`, patches fetch to disable timeouts, injects `x-opencode-directory`/`x-opencode-workspace` headers, rewrites GETs to promote headers into query params), `v2/data.ts` (1kb — `message.user()` helper building `UserMessage` w/ placeholder IDs/timestamps).
-- `js/script/{build,publish}.ts` + `js/example/example.ts` + `js/test/session-history.test.ts` — SUM_DONE — `script/build.ts` (4kb — regenerates V2 SDK from OpenAPI: dumps spec, prunes stale schemas, runs `@hey-api/openapi-ts` codegen, post-patches numeric query types + SSE fix, prettier, tsc), `script/publish.ts` (1kb — npm publish w/ version-already-published skip + `exports` `./src/`→`./dist/` transform), `example/example.ts` (2kb — demo: starts server, iterates `packages/core/*.ts`, prompts model to write tests per public function), `test/session-history.test.ts` (0.5kb — verifies V2 session-history accepts numeric `after`/`limit` query params).
-- `js/src/gen/` + `js/src/v2/gen/` (auto-generated, dropped — boilerplate)
-- `openapi.json` (1036KB) — Generated OpenAPI spec (dropped — boilerplate)
+JS SDK package: hand-written client/server wrappers (`createOpencode()` convenience factory, server spawning, V2 client patching) with build tooling (regenerates V2 SDK from OpenAPI via `@hey-api/openapi-ts`). Auto-generated code and OpenAPI spec (1036KB) are dropped from detail.
 
-## packages/console/
+## packages/console/ (REFINED)
 
-- (36248KB, 533 files) — TBD
+Cloud backend console for OpenCode: authentication, billing, workspace management, API key management, usage tracking, and enterprise features. Built with SolidJS + SolidStart (app), shared core logic, email templates, and Cloudflare Workers functions.
+
+- `app/` (~31MB, ~400 files) — SolidJS SolidStart web application. Route groups: `auth/` (OAuth via GitHub/Google), `workspace/` (admin console: dashboard, model toggles, BYO provider keys, subscription management, usage charts, API key CRUD, team management, billing), `black/` (premium subscription plan + Stripe checkout), `zen/` (OpenAI-compatible API proxy with rate limiting), `bench/` (LLM benchmark views), `api/` (enterprise contact, support). Also: shared UI components, SolidJS context providers, utilities, i18n, CSS, static assets.
+
+- `core/` (~4.6MB) — Shared core logic. `schema/` (11 Drizzle ORM MySQL table definitions: account, auth, benchmark, billing, ip, key, model, provider, referral, user, workspace). Top-level modules: `account.ts`, `actor.ts` (request-scoped identity), `aws.ts` (SES email), `billing.ts` (full Stripe integration), `black.ts`/`lite.ts` (plan mapping), `key.ts` (API key management), `model.ts`, `provider.ts` (BYOK), `referral.ts`, `subscription.ts` (usage-limit analysis), `user.ts`, `workspace.ts`. `drizzle/` (transaction manager), `util/` (crypto, date, logging, memoization).
+
+- `mail/` (324KB) — Email templates and sending: React-based HTML email template (`InviteEmail.tsx`) via `@jsx-email`, SES sending via aws4fetch.
+
+- `function/` — Cloudflare Workers edge layer: `auth.ts` (OAuth via GitHub/Google), `log-processor.ts` (LLM inference telemetry to Honeycomb), `stat.ts` (stats API for rate limit data).
+
+- `resource/` — SST resource adapter: `resource.cloudflare.ts` (Workers env), `resource.node.ts` (local dev via SST).
+
+- `support/` (88KB) — Internal SolidStart SSR admin panel: workspace/subscription lookup, Stripe payments, usage stats.
 
 ## packages/desktop/ (REFINED)
 
