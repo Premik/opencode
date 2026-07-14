@@ -162,22 +162,25 @@ PR #24638 (`fix/nested-subagent-permissions`) — **fix(tui): propagate permissi
   - Permission prompt UX: `subagentLabel` shows requesting session's description in header; generic tool fallback now displays tool params instead of just tool name
 - **Skipped (superseded by #36046):** `descendants` memo — `collectSubtree` already provides descendant traversal in the merged `my` branch
 
-#### TODO: Add core permission improvements
-
-- PR #36403 (`subagent-permissions`) — **fix(core): restore permission-aware subagent guidance**
-  - Status: OPEN, mergeable (245 lines)
-  - Restores filtered subagent guidance so denied targets aren't offered to the model
-
-#### TODO: Fix runner queue discarding subagent notifications
+#### TODO: Fix runner queue discarding subagent notifications ✅ MERGEABLE
 
 - PR #36375 (`fix/runner-queue-background-notification`) — **fix(runner): queue work when already running instead of discarding**
   - Status: OPEN (addresses #35066)
+  - **Mergeability: CLEAN** — 0 conflicts, merges to `my` without issues
   - Root cause: `Runner.ensureRunning` discards `ops.prompt()` calls when parent is busy, so background subagent completion notifications are lost and parent hangs
   - Fix: Adds `RunningThenRun` state to runner state machine to queue pending work instead of discarding it
 
-#### TODO: Add subagent interrupt capability
+#### TODO: Add subagent interrupt capability ⚠️ CONFLICTS (resolvable)
 
 - PR #32425 (`subagent-interrupt`) — **feat(opencode): interrupt a running subagent — steer / cancel / abort**
   - Status: OPEN (addresses #21458, #23534, #28738)
+  - **Mergeability: 3 conflicts** in `runtime-flags.ts`, `tool/task.ts`, `tool/task.test.ts`, `session/index.tsx` — all resolvable
   - Adds `task_steer`/`task_cancel`/`task_abort` tools + TUI esc menu to interrupt hanging subagents mid-run
   - Gated behind `OPENCODE_EXPERIMENTAL_SUBAGENT_INTERRUPT`
+
+#### TODO: Add core permission improvements ❌ MAJOR CONFLICTS (needs rebase)
+
+- PR #36403 (`subagent-permissions`) — **fix(core): restore permission-aware subagent guidance**
+  - Status: OPEN (245 lines)
+  - **Mergeability: 1858 conflicts** — PR is based on an old `dev`, needs full rebase
+  - Restores filtered subagent guidance so denied targets aren't offered to the model
