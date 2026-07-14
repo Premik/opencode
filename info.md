@@ -128,29 +128,40 @@ Multiple issues reported about sub-agents hanging indefinitely. Root causes and 
 
 PR #32167 (from proposal #32166) attempts to address nested sub-agent permission routing by carrying `originSessionID`/`originAgent`/`originDepth` metadata to root sessions.
 
-### Active Fix PRs (Open)
+### Active Fix PRs
 
-#### TODO: Fix headless mode permission hangs
+#### DONE: Fix headless mode permission hangs ✅
 
 PR #35823 (`fix/subagent-permission-hang`) — **fix(cli): answer subagent permission asks in headless run (#35073)**
-- **Status:** OPEN, mergeable (90 lines)
+- **Status:** ✅ MERGED LOCALLY — cherry-picked commit `e39304e8` onto `my` (rebased on latest `origin/dev`); typecheck passes, all 6 tests pass
 - **Fix:** Walks the `parentID` chain to answer permission asks from descendant sessions in headless mode
 - **Addresses:** Subagents treated as interactive in headless mode; auto-approve not inherited
 
-#### TODO: Fix TUI permission routing for nested subagents
+#### DONE: Fix TUI permission routing for nested subagents ✅
 
 PR #36046 (`fix_subagent_perm`) — **fix(tui): show permission prompts from nested subagent chains**
-- **Status:** OPEN (372 lines)
+- **Status:** ✅ MERGED LOCALLY — merged into `my` branch (rebased on latest `origin/dev`); typecheck passes
 - **Fix:** Collects full subtree instead of direct children, fixing TUI deadlock on grandchild subagent permissions
 - **Addresses:** Permission routing broken (TUI only collects direct children, missing grandchild events)
 
-#### TODO: Add core permission improvements and timeout mechanisms
+#### DONE: Add configurable timeout to Task tool ✅
+
+PR #36755 (`task-tool-timeout`) — **fix(opencode): add configurable timeout to Task tool**
+- **Status:** ✅ MERGED LOCALLY — merged into `my` branch (rebased on latest `origin/dev`); typecheck passes
+- **Fix:** Adds configurable timeout (5min default) via `timeout` parameter so subagents don't hang forever
+- **Addresses:** No timeout mechanisms (#11865, #33028, #13841, #23296, #25187, #35207)
+
+#### DONE: Inline subtask tree rendering + permission prompt UX ✅
+
+PR #24638 (`fix/nested-subagent-permissions`) — **fix(tui): propagate permissions from nested subagents and show full subtask tree**
+- **Status:** ✅ PORTED LOCALLY — stale PR (targeted old `packages/opencode` layout, conflicted with already-merged #36046). Instead of merging, ported only the two genuinely new pieces onto `my`; typecheck passes
+- **Ported:**
+  - `taskSubtree` / `sessionStats` / `formatStats` / `childStats` helpers for inline recursive subtask rendering with per-session stats (duration, tools, tokens, cost) and cycle protection
+  - Permission prompt UX: `subagentLabel` shows requesting session's description in header; generic tool fallback now displays tool params instead of just tool name
+- **Skipped (superseded by #36046):** `descendants` memo — `collectSubtree` already provides descendant traversal in the merged `my` branch
+
+#### TODO: Add core permission improvements
 
 - PR #36403 (`subagent-permissions`) — **fix(core): restore permission-aware subagent guidance**
   - Status: OPEN, mergeable (245 lines)
   - Restores filtered subagent guidance so denied targets aren't offered to the model
-  
-- PR #36755 (`task-tool-timeout`) — **fix(opencode): add configurable timeout to Task tool**
-  - Status: OPEN, mergeable (149 lines)
-  - Adds timeout mechanism (5min default) so subagents don't hang forever
-  - Addresses: No timeout mechanisms

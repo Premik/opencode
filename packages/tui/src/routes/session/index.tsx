@@ -2226,6 +2226,72 @@ function WebSearch(props: ToolProps) {
   )
 }
 
+function sessionStats(sessionID: string, sync: ReturnType<typeof useSync>) {
+  const msgs = sync.data.message[sessionID] ?? []
+  let tokens = 0
+  let cost = 0
+  for (const msg of msgs) {
+    if (msg.role !== "assistant") continue
+    tokens += msg.tokens.input + msg.tokens.output + msg.tokens.reasoning
+    cost += msg.cost
+  }
+  return { tokens, cost }
+}
+
+function formatStats(stats: { tokens: number; cost: number; toolCount: number; duration: number }) {
+  const parts: string[] = []
+  if (stats.duration > 0) parts.push(Locale.duration(stats.duration))
+  if (stats.toolCount > 0) parts.push(`${stats.toolCount} tools`)
+  if (stats.tokens > 0) parts.push(`${Locale.number(stats.tokens)} tk`)
+  if (stats.cost > 0) parts.push(`$${stats.cost.toFixed(4)}`)
+  return parts.join(" · ")
+}
+
+function childStats(sessionID: string, sync: ReturnType<typeof useSync>) {
+  const msgs = sync.data.message[sessionID] ?? []
+  const toolCount = msgs.flatMap((m) => (sync.data.part[m.id] ?? []).filter((p) => p.type === "tool")).length
+  const first = msgs.find((m) => m.role === "user")?.time.created
+  const last = msgs.findLast((m) => m.role === "assistant")?.time.completed
+  const { tokens, cost } = sessionStats(sessionID, sync)
+  return { tokens, cost, toolCount, duration: first && last ? last - first : 0 }
+}
+
+function taskSubtree(
+  sessionID: string,
+  sync: ReturnType<typeof useSync>,
+  depth: number,
+  visited = new Set<string>(),
+): string[] {
+  if (visited.has(sessionID)) return []
+  visited.add(sessionID)
+
+  const taskParts = (sync.data.message[sessionID] ?? []).flatMap((msg) =>
+    (sync.data.part[msg.id] ?? []).filter((part): part is ToolPart => part.type === "tool" && part.tool === "task"),
+  )
+  const indent = "  ".repeat(depth)
+  const lines: string[] = []
+
+  for (const part of taskParts) {
+    const state = part.state as {
+      status?: string
+      input?: { description?: string; subagent_type?: string }
+      metadata?: { sessionId?: string }
+      title?: string
+    }
+    const desc = state.title ?? state.input?.description ?? "subtask"
+    const icon = state.status === "completed" ? "✓" : state.status === "error" ? "✗" : state.status === "running" ? "●" : "○"
+    const childID = state.metadata?.sessionId
+    let statsStr = ""
+    if (childID) {
+      const formatted = formatStats(childStats(childID, sync))
+      if (formatted) statsStr = ` (${formatted})`
+    }
+    lines.push(`${indent}${icon} ${desc}${statsStr}`)
+    if (childID) lines.push(...taskSubtree(childID, sync, depth + 1, visited))
+  }
+  return lines
+}
+
 function Task(props: ToolProps) {
   const { theme } = useTheme()
   const { navigate } = useRoute()
@@ -2297,6 +2363,12 @@ function Task(props: ToolProps) {
 
     if (!isRunning() && props.part.state.status === "completed") {
       content.push(`↳ ${formatCompletedSubagentDetail(tools().length, Locale.duration(duration()))}`)
+    }
+
+    const childID = stringValue(props.metadata.sessionId)
+    if (childID) {
+      const subtree = taskSubtree(childID, sync, 1)
+      if (subtree.length > 0) content.push(...subtree)
     }
 
     return content.join("\n")
