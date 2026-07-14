@@ -101,23 +101,25 @@ Multiple issues reported about sub-agents hanging indefinitely. Root causes and 
 
 | Issue | Title | Status |
 |-------|-------|--------|
-| **#13715** | Permission asks from nested subagent sessions silently hang | Open |
-| **#35073** | fix: subagent permission asks hang indefinitely (sync subagents treated as interactive) | Open |
-| **#36762** | Headless `opencode run`: any permission resolving to "ask" hangs forever | Open |
-| **#33028** | Subagents hang indefinitely after quick bash tool call | Open |
-| **#32388** | ACP subagents are invisible and can hang forever on permission prompts | Open |
-| **#11865** | Tasks/Subagents with Codex/OpenAI get stuck with no timeout/retry | Open |
-| **#13841** | Explore subagent hangs indefinitely with Claude Opus 4.6 | Open |
-| **#23296** | Build stuck for 6h after delegating to explore subagent | Open |
-| **#25187** | Main & Sub-agents Randomly Freeze Indefinitely | Open |
-| **#35207** | Session hangs after MCP tool-call — no timeout recovery | Open |
+| **#13715** | Permission asks from nested subagent sessions silently hang | Open (fixed locally by #35823 + #36046) |
+| **#35073** | fix: subagent permission asks hang indefinitely (sync subagents treated as interactive) | Open (fixed locally by #35823) |
+| **#36762** | Headless `opencode run`: any permission resolving to "ask" hangs forever | Open (fixed locally by #35823) |
+| **#33028** | Subagents hang indefinitely after quick bash tool call | Open (fixed locally by #36755 timeout) |
+| **#32388** | ACP subagents are invisible and can hang forever on permission prompts | Open (fixed locally by #35823 + #36046) |
+| **#11865** | Tasks/Subagents with Codex/OpenAI get stuck with no timeout/retry | Open (fixed locally by #36755 timeout) |
+| **#13841** | Explore subagent hangs indefinitely with Claude Opus 4.6 | Open (fixed locally by #36755 timeout) |
+| **#23296** | Build stuck for 6h after delegating to explore subagent | Open (fixed locally by #36755 timeout) |
+| **#25187** | Main & Sub-agents Randomly Freeze Indefinitely | Open (fixed locally by #36755 timeout) |
+| **#35207** | Session hangs after MCP tool-call — no timeout recovery | Open (fixed locally by #36755 timeout) |
 
 ### Root Causes
 
-1. **Permission routing broken** - TUI only collects direct children, missing grandchild events (#13715, #7654)
-2. **Subagents treated as interactive** - In headless mode, subagents wait for human input that never comes (#35073)
-3. **No timeout mechanisms** - Many issues mention lack of timeout/retry for hanging subagents
-4. **Auto-approve not inherited** - `--auto` flag doesn't propagate to subagent sessions
+1. **Permission routing broken** - TUI only collects direct children, missing grandchild events (#13715, #7654) — **FIXED locally by #36046**
+2. **Subagents treated as interactive** - In headless mode, subagents wait for human input that never comes (#35073) — **FIXED locally by #35823**
+3. **No timeout mechanisms** - Many issues mention lack of timeout/retry for hanging subagents — **FIXED locally by #36755**
+4. **Auto-approve not inherited** - `--auto` flag doesn't propagate to subagent sessions — **FIXED locally by #35823**
+5. **Runner queue discarding notifications** - `Runner.ensureRunning` discards completion notifications when parent is busy (#35066) — **NOT FIXED** (PR #36375)
+6. **No interrupt capability** - No way to cancel/steer hanging subagents mid-run (#21458, #23534, #28738) — **NOT FIXED** (PR #32425)
 
 ### Related Closed Issues
 - #30635 - Permission prompts from nested subagents never shown (closed)
@@ -165,3 +167,17 @@ PR #24638 (`fix/nested-subagent-permissions`) — **fix(tui): propagate permissi
 - PR #36403 (`subagent-permissions`) — **fix(core): restore permission-aware subagent guidance**
   - Status: OPEN, mergeable (245 lines)
   - Restores filtered subagent guidance so denied targets aren't offered to the model
+
+#### TODO: Fix runner queue discarding subagent notifications
+
+- PR #36375 (`fix/runner-queue-background-notification`) — **fix(runner): queue work when already running instead of discarding**
+  - Status: OPEN (addresses #35066)
+  - Root cause: `Runner.ensureRunning` discards `ops.prompt()` calls when parent is busy, so background subagent completion notifications are lost and parent hangs
+  - Fix: Adds `RunningThenRun` state to runner state machine to queue pending work instead of discarding it
+
+#### TODO: Add subagent interrupt capability
+
+- PR #32425 (`subagent-interrupt`) — **feat(opencode): interrupt a running subagent — steer / cancel / abort**
+  - Status: OPEN (addresses #21458, #23534, #28738)
+  - Adds `task_steer`/`task_cancel`/`task_abort` tools + TUI esc menu to interrupt hanging subagents mid-run
+  - Gated behind `OPENCODE_EXPERIMENTAL_SUBAGENT_INTERRUPT`
