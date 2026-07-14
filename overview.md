@@ -57,39 +57,39 @@ Key architecture points:
 - `sdks/` — REFINED — Third-party SDKs/extensions. `vscode/` — VS Code extension (`sst-dev` publisher): `src/extension.ts` (three commands: reuse/open split terminal running `opencode --port <random>`, insert `@file#L123` reference w/ selection range via local HTTP endpoint); `package.json` (manifest w/ keybindings, esbuild bundling); `esbuild.js` (bundles w/ `vscode` externalized); `README.md`; `script/release` + `script/publish` (tag bump + `.vsix` publish to VS Code marketplace + Open VSX).
 - `github/` — REFINED — GitHub Action for running OpenCode in CI on issues/PRs. `index.ts` (core entrypoint: spawns local opencode server, fetches triggering issue/PR comment + full GitHub GraphQL context, routes through three workflows — issue comment → create branch + open PR; local PR comment → checkout/run/push; fork PR → set up fork remote + push; handles image attachments, session events via SSE, git credential management, GitHub App token exchange via OIDC); `action.yml` (composite Action: caches opencode binary, installs via curl if not cached, runs `opencode github run` w/ env vars for model/agent/share/prompt/mentions/variant/OIDC); `README.md` (usage examples, installation, config reference, dev guide w/ mock payloads); `script/release` + `script/publish` (tag bump + `latest` tag management).
 
-## packages/
+## packages/ (REFINED)
 
-- `core/` (3976KB, 488 files) — REFINED — See `packages/core/src/` below.
-- `opencode/` (17832KB, 758 files) — REFINED — See `packages/opencode/src/` below.
-- `tui/` (1924KB, 241 files) — REFINED — See `packages/tui/src/` below.
+- `core/` (488 files) — See `packages/core/src/` below.
+- `opencode/` (758 files) — See `packages/opencode/src/` below.
+- `tui/` (241 files) — See `packages/tui/src/` below.
 - `app/` — See `packages/app/src/` below.
 - `ui/` — See `packages/ui/src/` below.
 - `web/` — See `packages/web/src/` below.
-- `cli/` (156KB, 25 files) — REFINED — See `packages/cli/src/` below.
-- `client/` (292KB, 21 files) — REFINED — See `packages/client/src/` below.
-- `server/` (160KB, 31 files) — REFINED — See `packages/server/src/` below.
-- `protocol/` (148KB, 26 files) — REFINED — See `packages/protocol/src/` below.
-- `schema/` (356KB, 74 files) — REFINED — See `packages/schema/src/` below.
+- `cli/` — See `packages/cli/src/` below.
+- `client/` — See `packages/client/src/` below.
+- `server/` — See `packages/server/src/` below.
+- `protocol/` — See `packages/protocol/src/` below.
+- `schema/` — See `packages/schema/src/` below.
 - `sdk/` — See `packages/sdk/` below.
-- `llm/` (1720KB, 152 files) — REFINED — See `packages/llm/src/` below.
+- `llm/` (152 files) — See `packages/llm/src/` below.
 - `console/` — See `packages/console/` below.
-- `desktop/` (9184KB, 250 files) — REFINED — See `packages/desktop/` below.
-- `codemode/` — REFINED — Effect-native confined JS interpreter: LLM writes JS programs calling host tools (no ambient FS/network/process). Core: `codemode.ts` (execute + limits), `interpreter/runtime.ts` (Acorn-based tree-walking interpreter), `tool.ts`/`tool-runtime.ts` (tool definition + dispatch), `tool-schema.ts` (schema→TS signatures), `openapi/fromSpec()` (OpenAPI 3.x → tools), `stdlib/` (12 sandbox modules: SandboxDate/RegExp/Map/Set/URL/Promise, collections, string/date/regexp/math/json/number/url/console/object). Design: no `eval`, max 32 nesting, 8 concurrent tool calls, `ToolError` for refusals. Tests: 7 files (execution, signatures, OpenAPI, promises, stdlib, enumeration, parity).
-- `containers/` — REFINED — Prebuilt Docker images for GitHub Actions CI. Hierarchy: `base` (Ubuntu 24.04) → `bun-node` (Node+Bun) → `rust`/`tauri-linux`; `bun-node` → `publish`. `script/build.ts` multi-arch buildx, published to `ghcr.io/anomalyco`.
-- `docs/` — REFINED — Mintlify-based documentation site (no build). Content: `index.mdx` (landing), `essentials/` (settings, navigation, markdown, code, images guides), `ai-tools/` (Cursor/Windsurf/Claude Code integration templates). `openapi.json` (~37K lines): OpenAPI 3.1.0 spec for API reference. Pure MDX + JSON, zero TypeScript. Deployed via Mintlify GitHub app.
-- `effect-drizzle-sqlite/` — REFINED — Vendored Effect-native SQLite adapter for Drizzle ORM. Two-layer: `effect-sqlite/` (driver-agnostic) + `sqlite-core/effect/` (Effect-yieldable query builders). Key: `SQLiteEffectSelectBase` implements `Effect.Effect<T>` — `yield* db.select().from(users)` works in generators. Transactions with savepoints, `withReplicas()` for read/write routing, `EffectCache` query caching, migration versioning. Deps: only `effect` + `drizzle-orm`.
+- `desktop/` (250 files) — See `packages/desktop/` below.
+- `codemode/` — Effect-native confined JS interpreter: LLM writes JS programs calling host tools (no ambient FS/network/process). Core: `codemode.ts` (execute + limits), `interpreter/runtime.ts` (Acorn-based tree-walking interpreter), `tool.ts`/`tool-runtime.ts` (tool definition + dispatch), `tool-schema.ts` (schema→TS signatures), `openapi/fromSpec()` (OpenAPI 3.x → tools), `stdlib/` (12 sandbox modules: SandboxDate/RegExp/Map/Set/URL/Promise, collections, string/date/regexp/math/json/number/url/console/object). Design: no `eval`, max 32 nesting, 8 concurrent tool calls, `ToolError` for refusals. Tests: 7 files (execution, signatures, OpenAPI, promises, stdlib, enumeration, parity).
+- `containers/` — Prebuilt Docker images for GitHub Actions CI. Hierarchy: `base` (Ubuntu 24.04) → `bun-node` (Node+Bun) → `rust`/`tauri-linux`; `bun-node` → `publish`. `script/build.ts` multi-arch buildx, published to `ghcr.io/anomalyco`.
+- `docs/` — Mintlify-based documentation site (no build). Content: `index.mdx` (landing), `essentials/` (settings, navigation, markdown, code, images guides), `ai-tools/` (Cursor/Windsurf/Claude Code integration templates). `openapi.json` (~37K lines): OpenAPI 3.1.0 spec for API reference. Pure MDX + JSON, zero TypeScript. Deployed via Mintlify GitHub app.
+- `effect-drizzle-sqlite/` — Vendored Effect-native SQLite adapter for Drizzle ORM. Two-layer: `effect-sqlite/` (driver-agnostic) + `sqlite-core/effect/` (Effect-yieldable query builders). Key: `SQLiteEffectSelectBase` implements `Effect.Effect<T>` — `yield* db.select().from(users)` works in generators. Transactions with savepoints, `withReplicas()` for read/write routing, `EffectCache` query caching, migration versioning. Deps: only `effect` + `drizzle-orm`.
 - `effect-sqlite-node/` — Wraps Node 22+ `node:sqlite` as Effect `SqlClient` (scoped pool, WAL mode, `loadExtension`).
-- `enterprise/` — REFINED — OpenCode Teams session sharing app (SolidStart on Cloudflare). Two concerns: (1) REST API (`/api`): create/sync/retrieve/delete shares; (2) SSR frontend: share rendering with `SessionTurn`, `MessageNav`, `SessionReview`, OG images. Storage: S3/R2. Secret-based auth. Live OpenAPI spec. Deployed to `teams.opencode.ai`.
-- `function/` — REFINED — Cloudflare Workers backend for session share/sync. Hono router with `SyncServer` Durable Object (WebSocket pub/sub, R2 storage, secret auth). REST endpoints for share CRUD/sync/poll/data, Feishu→Discord webhook bridge, GitHub App OIDC token exchange. Pure Workers (no build).
-- `httpapi-codegen/` — REFINED — Build-time source code generator for HTTP clients from `HttpApi` + Effect Schema. Three-phase: `compile→Contract`, `emitEffect/emitPromise→Output`, `write`. Two flavors: Effect (rich decoded values, SSE `Stream`) and Promise (zero-Effect, direct `fetch`). Portability enforcement rejects non-generatable schemas. Manifest-based stale file cleanup. Single entry point (~1077 lines). Tests track reference generated output.
-- `http-recorder/` — REFINED — VCR-like HTTP/WebSocket recording/replay library for Effect TypeScript. Saves interactions as JSON "cassette" files, replays on subsequent runs. Modes: local (record/replay), CI (fail if missing), passthrough. Features: secret scanning, composable redactor, sequential interaction matching, atomic writes. Two WebSocket impls: `socket.ts` (Effect `Socket.Socket`) and `websocket.ts` (`WebSocketExecutor`). Dual storage: `fileSystem()`/`memory()`. API: `HttpRecorder.http()` + `HttpRecorder.socket()`.
-- `identity/` — REFINED — Brand assets only: SVG + PNG logos (dark/light variants, 96x96 + 512x512), used by web console and desktop app. No source code.
-- `plugin/` — REFINED — Public plugin SDK (contract, not implementation). Almost entirely type definitions. Two API styles: V1 (legacy, callback-based `Hooks`), V2 (transform/reload-based `define()` with `PluginContext` for domain drafts: `agent`/`catalog`/`command`/`integration`/`skill`/`reference`). V2 has Effect + Promise APIs. TUI plugin types in `tui.ts`. `PLAN.md` documents V2 architecture. Implementation lives in `core` + `opencode`.
-- `sdk-next/` — REFINED — Effect-native in-process OpenCode host SDK composing Client+Core+Server into single process (no network I/O). `create()` assembles Server's HTTP router into `WebHandler`, wraps as `fetch`, creates client pointed at it. Returns `{...client, tools: { register }}`. `Service` tag + `layer` for Effect DI. Tests: `embedded.test.ts` (session CRUD, prompt, streaming, interrupt, switching, isolation), `import-boundaries.test.ts`.
-- `session-ui/` (102 files) — REFINED — SolidJS UI components for rendering AI coding sessions. Core: `message-part.tsx` (maps every `Part` type to visual via `PART_MAPPING`), `session-turn.tsx` (turn rendering + streaming), `markdown.tsx` (Shiki web worker + morphdom), `file.tsx` (Pierre diff engine + virtualization), `session-review.tsx` (code review panel). Tool UI: `basic-tool.tsx`, `tool-status-title.tsx`, `tool-count-summary.tsx`. Workers: `markdown-shiki.worker.ts`, `pierre/worker.ts`. v2 components in `v2/components/`. Barrel-less exports for tree-shaking. Performance: deferred mounting, LRU caches, virtualization >500 lines, WeakMap.
-- `slack/` — REFINED — Slack bot via `@slack/bolt` Socket Mode: embedded OpenCode server, sessions keyed by `channel-thread_ts`, streams responses to threads, posts share URLs, forwards tool updates. Setup: Slack app OAuth scopes, Socket Mode, env vars (see `README.md`).
-- `stats/` (106 files) — REFINED — Public analytics dashboard tracking OpenCode AI usage (models, providers, countries). Three sub-packages: `core/` (Effect services, Drizzle ORM, Athena ETL), `server/` (Cloudflare Workers → Firehose), `app/` (SolidStart SSR dashboard, 17-locale i18n, d3-geo world map, leaderboards). Cache-friendly headers. Three stat dimensions: `model_stat`/`provider_stat`/`geo_stat`. Deployed to `stats.opencode.ai`.
-- `storybook/` — REFINED — Storybook config for UI component development across `ui`, `session-ui`, `app`. `.storybook/main.ts`: SolidJS+Vite, story globs, Tailwind CSS, custom playground CSS plugin. `.storybook/preview.tsx`: global decorators (`ThemeProvider`, `MetaProvider`, `DialogProvider`, `MarkedProvider`). Mocks: 15+ mock modules via Vite aliasing. CSS playground: live editing writes to source.
+- `enterprise/` — OpenCode Teams session sharing app (SolidStart on Cloudflare). Two concerns: (1) REST API (`/api`): create/sync/retrieve/delete shares; (2) SSR frontend: share rendering with `SessionTurn`, `MessageNav`, `SessionReview`, OG images. Storage: S3/R2. Secret-based auth. Live OpenAPI spec. Deployed to `teams.opencode.ai`.
+- `function/` — Cloudflare Workers backend for session share/sync. Hono router with `SyncServer` Durable Object (WebSocket pub/sub, R2 storage, secret auth). REST endpoints for share CRUD/sync/poll/data, Feishu→Discord webhook bridge, GitHub App OIDC token exchange. Pure Workers (no build).
+- `httpapi-codegen/` — Build-time source code generator for HTTP clients from `HttpApi` + Effect Schema. Three-phase: `compile→Contract`, `emitEffect/emitPromise→Output`, `write`. Two flavors: Effect (rich decoded values, SSE `Stream`) and Promise (zero-Effect, direct `fetch`). Portability enforcement rejects non-generatable schemas. Manifest-based stale file cleanup. Single entry point (~1077 lines). Tests track reference generated output.
+- `http-recorder/` — VCR-like HTTP/WebSocket recording/replay library for Effect TypeScript. Saves interactions as JSON "cassette" files, replays on subsequent runs. Modes: local (record/replay), CI (fail if missing), passthrough. Features: secret scanning, composable redactor, sequential interaction matching, atomic writes. Two WebSocket impls: `socket.ts` (Effect `Socket.Socket`) and `websocket.ts` (`WebSocketExecutor`). Dual storage: `fileSystem()`/`memory()`. API: `HttpRecorder.http()` + `HttpRecorder.socket()`.
+- `identity/` — Brand assets only: SVG + PNG logos (dark/light variants, 96x96 + 512x512), used by web console and desktop app. No source code.
+- `plugin/` — Public plugin SDK (contract, not implementation). Almost entirely type definitions. Two API styles: V1 (legacy, callback-based `Hooks`), V2 (transform/reload-based `define()` with `PluginContext` for domain drafts: `agent`/`catalog`/`command`/`integration`/`skill`/`reference`). V2 has Effect + Promise APIs. TUI plugin types in `tui.ts`. `PLAN.md` documents V2 architecture. Implementation lives in `core` + `opencode`.
+- `sdk-next/` — Effect-native in-process OpenCode host SDK composing Client+Core+Server into single process (no network I/O). `create()` assembles Server's HTTP router into `WebHandler`, wraps as `fetch`, creates client pointed at it. Returns `{...client, tools: { register }}`. `Service` tag + `layer` for Effect DI. Tests: `embedded.test.ts` (session CRUD, prompt, streaming, interrupt, switching, isolation), `import-boundaries.test.ts`.
+- `session-ui/` (102 files) — SolidJS UI components for rendering AI coding sessions. Core: `message-part.tsx` (maps every `Part` type to visual via `PART_MAPPING`), `session-turn.tsx` (turn rendering + streaming), `markdown.tsx` (Shiki web worker + morphdom), `file.tsx` (Pierre diff engine + virtualization), `session-review.tsx` (code review panel). Tool UI: `basic-tool.tsx`, `tool-status-title.tsx`, `tool-count-summary.tsx`. Workers: `markdown-shiki.worker.ts`, `pierre/worker.ts`. v2 components in `v2/components/`. Barrel-less exports for tree-shaking. Performance: deferred mounting, LRU caches, virtualization >500 lines, WeakMap.
+- `slack/` — Slack bot via `@slack/bolt` Socket Mode: embedded OpenCode server, sessions keyed by `channel-thread_ts`, streams responses to threads, posts share URLs, forwards tool updates. Setup: Slack app OAuth scopes, Socket Mode, env vars (see `README.md`).
+- `stats/` (106 files) — Public analytics dashboard tracking OpenCode AI usage (models, providers, countries). Three sub-packages: `core/` (Effect services, Drizzle ORM, Athena ETL), `server/` (Cloudflare Workers → Firehose), `app/` (SolidStart SSR dashboard, 17-locale i18n, d3-geo world map, leaderboards). Cache-friendly headers. Three stat dimensions: `model_stat`/`provider_stat`/`geo_stat`. Deployed to `stats.opencode.ai`.
+- `storybook/` — Storybook config for UI component development across `ui`, `session-ui`, `app`. `.storybook/main.ts`: SolidJS+Vite, story globs, Tailwind CSS, custom playground CSS plugin. `.storybook/preview.tsx`: global decorators (`ThemeProvider`, `MetaProvider`, `DialogProvider`, `MarkedProvider`). Mocks: 15+ mock modules via Vite aliasing. CSS playground: live editing writes to source.
 
 ## packages/core/src/ (REFINED)
 
@@ -296,25 +296,21 @@ SolidJS web app shell: route tree, 20+ context providers, reusable dialog/compon
 - `entry.tsx` — Bootstrap: SolidJS render, locale detection, Sentry init.
 - `desktop-menu.ts` — Desktop menu bar type system with platform-specific accelerators.
 
-**`components/` (~1000KB)** — 80+ reusable UI components: 20+ dialogs (command palette, provider selection, project editing, fork, model management, settings), prompt input with attachments/drag-and-drop, titlebar with tab navigation, file tree with virtual scrolling, settings panels, session components, terminal, debug bar.
+**`components/`** — 80+ reusable UI components: 20+ dialogs (command palette, provider selection, project editing, fork, model management, settings), prompt input with attachments/drag-and-drop, titlebar with tab navigation, file tree with virtual scrolling, settings panels, session components, terminal, debug bar.
 
-**`pages/` (~800KB)** — Route-level pages: home/project selection, main session page with file tabs/composer/terminal, legacy and new layout shells, session sub-pages (composer, v2 review, timeline with virtual scrolling).
+**`pages/`** — Route-level pages: home/project selection, main session page with file tabs/composer/terminal, legacy and new layout shells, session sub-pages (composer, v2 review, timeline with virtual scrolling).
 
-**`context/` (~640KB)** — SolidJS state management (all use `createSimpleContext`): global/server/tabs/layout/file/prompt/settings/platform contexts, global sync engine (19 files, ~240KB) with event reducer and session cache, plus command/comments/permission/notification/MCP/sync contexts.
+**`context/`** — SolidJS state management (all use `createSimpleContext`): global/server/tabs/layout/file/prompt/settings/platform contexts, global sync engine (event reducer + session cache), plus command/comments/permission/notification/MCP/sync contexts.
 
-**`i18n/` (~380KB)** — 18 locale dictionaries (`en.ts` base + 17 translations) + `parity.test.ts`.
+**`i18n/`** — 18 locale dictionaries (`en.ts` base + 17 translations) + `parity.test.ts`.
 
-**`utils/` (~148KB)** — 46 utility modules: agent, AI message parsing, base64, diffs, file management, persistence, prompts, server health/scope, session routing, sound, terminal, time, toast, worktree.
+**`utils/`** — 46 utility modules: agent, AI message parsing, base64, diffs, file management, persistence, prompts, server health/scope, session routing, sound, terminal, time, toast, worktree.
 
-**`wsl/` (~71KB)** — Windows Subsystem for Linux integration: types, context provider, server probes, dialogs, settings.
+**`wsl/`** — Windows Subsystem for Linux integration: types, context provider, server probes, dialogs, settings.
 
-**`addons/` (25KB)** — xterm.js terminal serialization addon for ghostty-web.
+**`addons/`** — xterm.js terminal serialization addon for ghostty-web.
 
-**`hooks/`** — `use-providers.ts`, `provider-catalog.ts`.
-
-**`constants/`** — `file-picker.ts`: accepted image/file types for OS dialogs.
-
-**`assets/`** — Static assets: `help/introducing-tabs.mp4`, `help/placeholder.png`.
+**Minor leaf folders** — `hooks/` (`use-providers`/`provider-catalog`), `constants/` (`file-picker.ts` accepted image/file types), `assets/` (`introducing-tabs.mp4`, `placeholder.png`).
 
 ## packages/ui/src/ (REFINED)
 
