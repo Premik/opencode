@@ -109,7 +109,7 @@ export const TaskTool = Tool.define(
     const scope = yield* Scope.Scope
     const flags = yield* RuntimeFlags.Service
     const database = yield* Database.Service
-const defaultTimeoutMs = flags.taskDefaultTimeoutMs ?? 5 * 60 * 1000
+const defaultTimeoutMs = flags.taskDefaultTimeoutMs ?? 15 * 60 * 1000
     const interrupt = yield* Interrupt.Service
 
     const run = Effect.fn("TaskTool.execute")(function* (

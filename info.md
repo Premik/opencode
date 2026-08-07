@@ -118,7 +118,7 @@ Multiple issues reported about sub-agents hanging indefinitely. Root causes and 
 2. **Subagents treated as interactive** - In headless mode, subagents wait for human input that never comes (#35073) — **FIXED locally by #35823**
 3. **No timeout mechanisms** - Many issues mention lack of timeout/retry for hanging subagents — **FIXED locally by #36755**
 4. **Auto-approve not inherited** - `--auto` flag doesn't propagate to subagent sessions — **FIXED locally by #35823**
-5. **Runner queue discarding notifications** - `Runner.ensureRunning` discards completion notifications when parent is busy (#35066) — **NOT FIXED** (PR #36375)
+5. **Runner queue discarding notifications** - `Runner.ensureRunning` discards completion notifications when parent is busy (#35066) — **FIXED locally by #36375**
 6. **No interrupt capability** - No way to cancel/steer hanging subagents mid-run (#21458, #23534, #28738) — **NOT FIXED** (PR #32425)
 
 ### Related Closed Issues
@@ -150,7 +150,7 @@ PR #36046 (`fix_subagent_perm`) — **fix(tui): show permission prompts from nes
 
 PR #36755 (`task-tool-timeout`) — **fix(opencode): add configurable timeout to Task tool**
 - **Status:** ✅ MERGED LOCALLY — merged into `my` branch (rebased on latest `origin/dev`); typecheck passes
-- **Fix:** Adds configurable timeout (5min default) via `timeout` parameter so subagents don't hang forever
+- **Fix:** Adds configurable timeout (15min default) via `timeout` parameter so subagents don't hang forever
 - **Addresses:** No timeout mechanisms (#11865, #33028, #13841, #23296, #25187, #35207)
 
 #### DONE: Inline subtask tree rendering + permission prompt UX ✅
@@ -162,13 +162,12 @@ PR #24638 (`fix/nested-subagent-permissions`) — **fix(tui): propagate permissi
   - Permission prompt UX: `subagentLabel` shows requesting session's description in header; generic tool fallback now displays tool params instead of just tool name
 - **Skipped (superseded by #36046):** `descendants` memo — `collectSubtree` already provides descendant traversal in the merged `my` branch
 
-#### TODO: Fix runner queue discarding subagent notifications ✅ MERGEABLE
+#### DONE: Fix runner queue discarding subagent notifications ✅
 
-- PR #36375 (`fix/runner-queue-background-notification`) — **fix(runner): queue work when already running instead of discarding**
-  - Status: OPEN (addresses #35066)
-  - **Mergeability: CLEAN** — 0 conflicts, merges to `my` without issues
-  - Root cause: `Runner.ensureRunning` discards `ops.prompt()` calls when parent is busy, so background subagent completion notifications are lost and parent hangs
-  - Fix: Adds `RunningThenRun` state to runner state machine to queue pending work instead of discarding it
+PR #36375 (`fix/runner-queue-background-notification`) — **fix(runner): queue work when already running instead of discarding**
+- **Status:** ✅ MERGED LOCALLY — merged into `my` branch (rebased on latest `origin/dev`); typecheck passes
+- **Fix:** Adds `RunningThenRun` state to runner state machine to queue pending work instead of discarding it
+- **Addresses:** Runner queue discarding notifications (#35066)
 
 #### TODO: Add subagent interrupt capability ⚠️ CONFLICTS (resolvable)
 
