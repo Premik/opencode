@@ -142,7 +142,6 @@ test("parent false override takes precedence over directory-level auto-accept", 
 
     expect(autoRespondsPermission(autoAccept, sessions, permission("grandchild"), "/tmp/project")).toBe(false)
   })
-  })
 })
 
 describe("isDirectoryAutoAccepting", () => {
